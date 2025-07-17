@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { GFG_ROUTES } from '../gfgRoutes/gfgRoutes';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
@@ -26,17 +28,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (userData) => {
     try {
       // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const user = {
-        id: userData.id || Date.now().toString(),
-        name: userData.name || 'User',
-        email: userData.email,
-        avatar: userData.avatar || null
-      };
-      
+      const response = await axios.post(`${GFG_ROUTES.LOGIN}`,userData);
+    
+      console.log("response from auth login page ", response);
+      const user = response.data.user;      
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
+    
       return user;
     } catch (error) {
       console.error('Login failed:', error);

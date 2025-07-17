@@ -6,5 +6,6 @@ export const GFG_ROUTES ={
     LOGOUT: `${host}/api/auth/logout`,
     GOOGLE_AUTH: `${host}/api/auth/google`,
     GETUSER:`${host}/api/auth/getuser`,
+    
 
 }

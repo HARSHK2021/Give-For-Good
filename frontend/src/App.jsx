@@ -17,6 +17,7 @@ import { UserProfileProvider } from './contexts/UserProfileContext';
 import { ChatbotProvider } from './contexts/ChatbotContext';
 import { SuccessStoriesProvider } from './contexts/SuccessStoriesContext';
 import Chatbot from './components/Chatbot';
+import Signup from './pages/Signup';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
                       <Route path="/" element={<Home />} />
                       <Route path="/chat" element={<Chat />} />
                       <Route path="/login" element={<Login />} />
+                      <Route path= "/signup" element={<Signup/>}/>
                       <Route path="/add-product" element={<AddProduct />} />
                       <Route path="/product/:id" element={<ProductDetails />} />
                       <Route path="/favorites" element={<Favorites />} />

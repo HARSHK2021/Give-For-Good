@@ -25,7 +25,12 @@ const userSchema = new mongoose.Schema({
     /// google auth
   googleUserId: {
   type: String,
+},
+// avatar
+avatar:{
+    type:String,
 }
+
 
     
 
