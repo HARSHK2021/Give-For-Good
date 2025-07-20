@@ -16,16 +16,17 @@ const google = new Google(
 export const register = async (req, res) => {
     try {
         console.log("Registering user with data:", req.body);
-        const { name, email, password , phone} = req.body;
-
+        const { name, email, password , phone,avatar} = req.body;
+        
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ success: false, message: "User already exists" });
         }   
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ name, email, phone ,password: hashedPassword });
+        const newUser = new User({ name, email, phone ,password: hashedPassword,avatar });
         await newUser.save();
-        res.status(201).json({  success: true, message: "User created successfully", user:newUser });
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        res.status(201).json({  success: true, message: "User created successfully", user:newUser, token:token });
 
 
     } catch (error) {
@@ -57,10 +58,16 @@ export const login = async (req, res) => {
 // Logout a user
 export const logout = async (req, res) => {
     try {
-        res.clearCookie("token");
-        res.status(200).json({ success: true, message: "Logout successful" });
+        console.log("into the logout function")
+       res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+  });
+  console.log(" step 2 ---------------------")
+        return res.status(200).json({ success: true, message: "Logout successful" });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
         console.log(error);
     }
 };
@@ -105,7 +112,7 @@ export const getGoogleLoginCallback = async (req, res) => {
     console.log('reached callback function ')
     const { code, state } = req.query;
     console.log("Google callback received with code:", code, "and state:", state);
-    console.log(req.cookies)
+    // console.log(req.cookies)
     const cookieState = req.cookies.google_oauth_state;
     const codeVerifier = req.cookies.google_code_verifier;
 
@@ -130,16 +137,17 @@ export const getGoogleLoginCallback = async (req, res) => {
     }
 
     const claims = decodeIdToken(tokens.idToken());
-    const { sub:googleUserId, email, name } = claims;
+    const { sub:googleUserId, email, name,picture } = claims;
 
-    console.log("Google user ID:", googleUserId, "Email:", email, "Name:", name);
+    console.log("Google user ID:", googleUserId, "Email:", email, "Name:", name, "picture",picture);
     let user = await User.findOne({ googleUserId });
     if (!user) {
         user = new User({
             googleUserId,
             email,
             name,
-            password: null // No password for OAuth users
+            password: null ,// No password for OAuth users
+            avatar:picture
         });
         await user.save();
     }
@@ -148,12 +156,42 @@ export const getGoogleLoginCallback = async (req, res) => {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
-        maxAge: 60 * 60 * 1000 // 1 hour
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-   return  res.status(200).json({ success: true, message: "Login successful", user, token });
-    req.flash("success", "Login successful");
-    res.redirect("/");
+//    return  res.status(200).json({ success: true, message: "Login successful", user, token });
+    
+    return res.redirect("http://localhost:5173/");
 
+}
+
+
+// verify token and provide user 
+export const verifyToken = async (req,res)=>{
+    try {
+        const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+        console.log("token from ",token)
+        if (!token) {
+            return res.status(401).json({ success: false, message: "Unauthorized No Token" });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        console.log(user)
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        return res.status(201).json({
+            success:true,
+            message:"User Verified ",
+            user
+        })
+        
+    } catch (error) {
+
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        
+    }
+   
 }
 
 

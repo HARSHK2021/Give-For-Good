@@ -16,7 +16,6 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: String,
         required: false,
-        unique: true, // ensure phone number is unique
     },
     createdAt: {
         type: Date,
@@ -30,10 +29,7 @@ const userSchema = new mongoose.Schema({
 avatar:{
     type:String,
 }
-
-
     
-
 }, { timestamps: true });
  const User = mongoose.model("User", userSchema);
 export default User;

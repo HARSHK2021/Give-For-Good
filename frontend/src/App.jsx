@@ -18,7 +18,7 @@ import { ChatbotProvider } from './contexts/ChatbotContext';
 import { SuccessStoriesProvider } from './contexts/SuccessStoriesContext';
 import Chatbot from './components/Chatbot';
 import Signup from './pages/Signup';
-
+import { ToastContainer } from 'react-toastify';
 function App() {
   return (
     <AuthProvider>
@@ -27,6 +27,7 @@ function App() {
           <UserProfileProvider>
             <ChatbotProvider>
               <SuccessStoriesProvider>
+                      <ToastContainer />
                 <Router>
                   <div className="min-h-screen bg-slate-900 text-white">
                     <Header />

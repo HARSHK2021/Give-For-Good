@@ -4,18 +4,23 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import axios from "axios";
+import { GFG_ROUTES } from "../gfgRoutes/gfgRoutes";
+import { toast } from 'react-toastify';
 
 const Signup = () => {
-  const [isSignup, setIsSignup] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading,setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
     phone: "",
+    avatar:""
   });
-  const { login } = useAuth();
 
+
+  const { setUser } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -27,48 +32,68 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+     // Create UI Avatars URL based on user's name
+  const encodedName = encodeURIComponent(formData.name.trim());
+  const avatarUrl = `https://ui-avatars.com/api/?name=${encodedName}&background=random&rounded=true&size=128`;
+  console.log(avatarUrl)
+  const submissionData = {
+    ...formData,
+    avatar: avatarUrl,
+  };
+
     try {
-      await login(formData);
-      navigate("/");
+      setIsLoading(true);
+  
+      const response = await axios.post(GFG_ROUTES.REGISTER, submissionData);
+      console.log(response);
+  
+      if (response.data && response.data.success) {
+        toast.success(response.data.message || "Registration successful!");
+        localStorage.setItem('token', response.data.token);
+
+        // Optional: save user/token in context if provided in response
+        if (response.data.user) {
+          
+          setUser(response.data.user);
+          // If you have setUser from context, use setUser(response.data.user);
+        }
+        console.log("User context user when sigen up ")
+  
+        navigate("/"); // Go to home or wherever you want
+      } else {
+        // Display server error message OR fallback
+        toast.error(response.data?.message || "Registration failed.");
+      }
     } catch (error) {
-      console.error("Authentication failed:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          "Server Error. Please try again later."
+      );
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      // Mock Google login
-      const mockUser = {
-        id: "1",
-        name: "John Doe",
-        email: "john@example.com",
-        avatar:
-          "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?w=100",
-      };
-      const response = await login(mockUser);
-      console.log("response ", response);
-
-      navigate("/");
-    } catch (error) {
-      console.error("Google login failed:", error);
-    }
+    window.location.href = "http://localhost:3000/api/auth/google";
   };
 
   return (
-    <div className="min-h-screen border  flex items-center justify-center bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen  flex items-center justify-center bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
             {"Create your account"}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            'Already have an account?'
+            Already have an account? {" "}
             <button
               //////
-              onClick={() => setIsSignup(!isSignup)}
+              onClick={() => navigate("/login")}
               className="font-medium text-teal-400 hover:text-teal-300"
             >
-              'Sign in'
+            Sign in
             </button>
           </p>
         </div>
@@ -182,13 +207,29 @@ const Signup = () => {
           </div>
 
           <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
-            >
-              {isSignup ? "Sign up" : "Sign in"}
-            </button>
-          </div>
+  <button
+    type="submit"
+    disabled={isLoading}
+    className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
+  >
+    {isLoading ? (
+      <>
+        <svg
+          className="animate-spin h-5 w-5 mr-2 text-white"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        Loading...
+      </>
+    ) : (
+      "Sign up"
+    )}
+  </button>
+</div>
 
           <div className="mt-6">
             <div className="relative">

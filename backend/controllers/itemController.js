@@ -2,49 +2,82 @@
 import Item from "../models/Item.js";
 import imagekit from "../utils/imageKit.js";
 
-export const addItem = async( req,res)=>{
-    try {
-        const { title, description, category, latitude, longitude,address} = req.body;
-        const files = req.files; // from multer middleware
-        const folderPath = `items/${category}`; // category-wise folder
-         if (!files || files.length === 0) {
+export const addItem = async (req, res) => {
+  try {
+    console.log("add item reached");
+    console.log(req.body);
+    console.log(req.files);
+
+    const {
+      title,
+      description,
+      category,
+      condition,
+      whyIamSharing,
+      postedBy,
+      address,
+      location
+    } = req.body;
+
+    const files = req.files;
+    const safeCategory = category.replace(/[^a-zA-Z0-9]/g, '_'); 
+    const folderPath = `items/${safeCategory}`;
+
+    if (!files || files.length === 0) {
       return res.status(400).json({ message: "Images are required" });
     }
+
+    // 🔧 Parse and validate address and location
+    const parsedAddress = JSON.parse(address); // stringified from frontend
+    const parsedLocation = JSON.parse(location); // also stringified
+
+    if (
+      !parsedLocation ||
+      !Array.isArray(parsedLocation.coordinates) ||
+      parsedLocation.coordinates.length !== 2
+    ) {
+      return res.status(400).json({ message: "Invalid location coordinates" });
+    }
+
+    const coordinates = parsedLocation.coordinates.map(coord => parseFloat(coord));
+    if (coordinates.some(isNaN)) {
+      return res.status(400).json({ message: "Coordinates must be numbers" });
+    }
+
+    // 🔧 Upload images
     const imageUrls = [];
-       for (const file of files) {
+    for (const file of files) {
       const uploaded = await imagekit.upload({
         file: file.buffer,
         fileName: file.originalname,
         folder: folderPath,
       });
-
       imageUrls.push(uploaded.url);
     }
+
+    // 🔧 Create item in DB
     const item = await Item.create({
-        title,
-        description,
-        images:imageUrls,
-         category,
-          location: {
+      title,
+      description,
+      condition,
+      category,
+      whyIamSharing,
+      images: imageUrls,
+      address: parsedAddress,
+      location: {
         type: "Point",
-        coordinates: [longitude, latitude],
-        
+        coordinates: coordinates, // [lng, lat]
       },
-      address,
-      postedBy:req.user._id,
-
-    
+      postedBy,
     });
-     return res.status(201).json({ message: "Item added", item });
-        
-    } catch (error) {
-        console.error(error); 
-         res.status(500).json({ message: "Something went wrong Can't add item" });
-         
 
-    }
+    return res.status(201).json({ message: "Item added", item });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong. Can't add item" });
+  }
+};
 
-}
 
 /// get all items 
 

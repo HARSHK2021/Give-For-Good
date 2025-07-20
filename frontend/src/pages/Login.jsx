@@ -1,54 +1,45 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from 'react-toastify';
 const Login = () => {
-  const [isSignup, setIsSignup] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: ''
+    email: "",
+    password: "",
+    name: "",
   });
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(formData);
-      navigate('/');
+      setIsLoading(true);
+      const response = await login(formData);
+      
+        toast.success("Login Successful")
+    
+      navigate("/");
     } catch (error) {
-      console.error('Authentication failed:', error);
+      toast.error("Wrong Credential ")
+      setIsLoading(false)
+      
+      console.error("Authentication failed:", error);
     }
   };
 
   const handleGoogleLogin = async () => {
-    try {
-      // Mock Google login
-      const mockUser = {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?w=100'
-      };
-      const response = await login(mockUser);
-      console.log("response ",response)
-      
-
-    
-      navigate('/');
-    } catch (error) {
-      console.error('Google login failed:', error);
-    }
+    window.location.href = "http://localhost:3000/api/auth/google";
   };
 
   return (
@@ -56,41 +47,26 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            {isSignup ? 'Create your account' : 'Sign in to your account'}
+            {"Sign in to your account"}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
-            {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+            {"Don't have an account?"}{" "}
             <button
-              onClick={() => setIsSignup(!isSignup)}
+              onClick={() => navigate("/signup")}
               className="font-medium text-teal-400 hover:text-teal-300"
             >
-              {isSignup ? 'Sign in' : 'Sign up'}
+              {"Sign up"}
             </button>
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {isSignup && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  placeholder="Enter your full name"
-                />
-              </div>
-            )}
-
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -111,7 +87,10 @@ const Login = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -121,7 +100,7 @@ const Login = () => {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={formData.password}
                   onChange={handleInputChange}
@@ -146,9 +125,36 @@ const Login = () => {
           <div>
             <button
               type="submit"
+              disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
             >
-              {isSignup ? 'Sign up' : 'Sign in'}
+              {isLoading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                  Loading...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </div>
 
@@ -158,7 +164,9 @@ const Login = () => {
                 <div className="w-full border-t border-slate-600" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-slate-900 text-gray-400">Or continue with</span>
+                <span className="px-2 bg-slate-900 text-gray-400">
+                  Or continue with
+                </span>
               </div>
             </div>
 

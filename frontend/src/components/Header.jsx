@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocation as useLocationContext } from '../contexts/LocationContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
+import { toast } from 'react-toastify';
 
 const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -13,6 +14,8 @@ const Header = () => {
   const { userStats } = useUserProfile();
   const navigate = useNavigate();
   const currentPath = useLocation();
+  
+
 
 
   return (
@@ -80,9 +83,10 @@ const Header = () => {
                   className="flex items-center space-x-2 hover:text-teal-400 transition-colors"
                 >
                   <img
-                    src={user.avatar || 'https://via.placeholder.com/32'}
+                    src={user.avatar || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=1234567'}
                     alt="User"
                     className="w-8 h-8 rounded-full"
+                    referrerPolicy="no-referrer"
                   />
                   <div className="hidden md:block text-left">
                     <div className="text-sm font-medium">{user.name}</div>
@@ -122,7 +126,9 @@ const Header = () => {
                       <div className="border-t border-slate-600 my-2"></div>
                       <button
                         onClick={() => {
+                          toast.success("Logout Successful")
                           logout();
+                        
                           setShowUserMenu(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm hover:bg-slate-600 transition-colors text-red-400"

@@ -24,7 +24,32 @@ const itemSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["electronics", "clothing", "books", "furniture", "toys", "others"],
+      enum: [
+        "Electronics",
+        "Cars",
+        "Furniture",
+        "Books",
+        "Clothing",
+        "Home & Garden",
+        "Sports",
+        "Toys",
+        "Others",
+      ],
+    },
+
+    condition:{
+      type:String,
+      required:true,
+      enum:[
+        'New',
+        'Like New',
+        'Good',
+        'Fair',
+        'Poor'
+      ]
+    },
+    whyIamSharing:{
+      type:String
     },
 
     location: {
@@ -40,7 +65,11 @@ const itemSchema = new mongoose.Schema(
     },
 
     address: {
-      type: String, // Optional, human-readable address
+      street: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      pinCode: { type: String, trim: true },
+      country: { type: String, trim: true },
     },
 
     postedBy: {
@@ -62,7 +91,7 @@ const itemSchema = new mongoose.Schema(
 
     expiresAt: {
       type: Date,
-       default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       required: true, // used to auto-remove expired listings
     },
   },
