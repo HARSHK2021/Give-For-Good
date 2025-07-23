@@ -1,5 +1,6 @@
 
 import Item from "../models/Item.js";
+import User from "../models/User.js";
 import imagekit from "../utils/imageKit.js";
 
 export const addItem = async (req, res) => {
@@ -94,11 +95,7 @@ export const getAllItems = async (req,res)=>{
 }
 
 
-/// get item by filter 
 
-
-// GET /api/items?limit=10&page=1
-// controllers/itemController.js
 
 
 
@@ -106,55 +103,171 @@ export const getItems = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 12,
       category,
       title,
-      sort = "newest",
-      longitude,
-      latitude,
+      sortBy = 'newest',
+      lat,
+      lng,
     } = req.query;
 
-    const filters = {};
-    if (category) filters.category = category;
-    if (title) filters.title = { $regex: title, $options: "i" };
+    const query = {
+      isClaimed: false,
+      expiresAt: { $gt: new Date() },
+    };
 
-    // Location-based filtering (within 10km radius)
-    if (latitude && longitude) {
-      filters.location = {
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+
+    if (title) {
+      query.title = { $regex: title, $options: 'i' };
+    }
+
+    const skip = (page - 1) * limit;
+    const parsedLimit = parseInt(limit);
+
+    let sortOption = { createdAt: -1 };
+
+    if (sortBy === 'nearest' && lat && lng) {
+      query.location = {
         $near: {
           $geometry: {
-            type: "Point",
-            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)],
           },
-          $maxDistance: 10000, // 10km
+          $maxDistance: 20000, // 20km
         },
       };
+      sortOption = {}; // No sort; geospatial gives by proximity
     }
 
-    // Sorting
-    let sortBy = { createdAt: -1 };
-    if (sort === "nearest" && latitude && longitude) {
-      sortBy = {}; // already sorted by $near
-    } else if (sort === "oldest") {
-      sortBy = { createdAt: 1 };
-    }
+    const items = await Item.find(query)
+      .sort(sortOption)
+      .skip(skip)
+      .limit(parsedLimit);
 
-    const items = await Item.find(filters)
-      .sort(sortBy)
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .populate("postedBy", "name");
+    const totalCount = await Item.countDocuments(query);
+    const totalPages = Math.ceil(totalCount / parsedLimit);
 
-    const total = await Item.countDocuments(filters);
-
-    res.json({
+    res.status(200).json({
+      page: Number(page),
+      totalPages,
       items,
-      total,
-      currentPage: Number(page),
-      totalPages: Math.ceil(total / limit),
     });
   } catch (err) {
-    res.status(500).json({ error: "Server Error" });
+    console.error('Error in getItems:', err);
+    res.status(500).json({ error: 'Server Error' });
   }
 };
 
+
+
+
+/// get item details by id
+export const getItemDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Item ID is required" });
+    }
+
+    const item = await Item.findById(id).populate('postedBy'); /// claimedBy  laater
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.status(200).json({ success: true, item });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Failed to fetch item details" });
+}
+}
+
+
+/// add to favorites
+
+export const addToFavorites = async (req, res) => {
+  try {               
+    console.log("add to favorites reached");
+    console.log(req.body);
+    const userId = req.userId; // Assuming userId is set by protectUser middleware
+    const {itemId } = req.body;
+
+    if (!userId || !itemId) {
+      return res.status(400).json({ message: "User ID and Item ID are required" });
+    }
+
+    // Find the user and add the item to their favorites
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.favorites.includes(itemId)) {
+      return res.status(400).json({ message: "Item already in favorites" });
+    }
+
+    user.favorites.push(itemId);
+    await user.save();
+
+    res.status(200).json({ message: "Item added to favorites", favorites: user.favorites });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong. Can't add to favorites" });
+  }
+};
+
+
+/// removve favorites
+export const removeFromFavorites = async (req, res) => {
+  try {
+    console.log("remove from favorites reached");
+    const { userId, itemId } = req.body;
+    console.log(req.body);
+
+    if (!userId || !itemId) {
+      return res.status(400).json({ message: "User ID and Item ID are required" });
+    }
+
+    // Find the user and remove the item from their favorites
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.favorites = user.favorites.filter(fav => fav.toString() !== itemId);
+    await user.save();
+    console.log("Item removed from favorites", user.favorites);
+
+
+    res.status(200).json({ message: "Item removed from favorites", favorites: user.favorites });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong. Can't remove from favorites" });
+  }
+};
+
+
+
+/// get favorites/:userId
+export const getFavorites = async (req, res) => {
+  try {
+    const userId = req.userId; // Assuming userId is set by protectUser middleware
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const user = await User.findById(userId).populate('favorites');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ favorites: user.favorites });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Something went wrong. Can't fetch favorites" });
+  }
+};

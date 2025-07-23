@@ -17,7 +17,10 @@ import {
   MessageCircle,
   Trophy,
   Target,
-  Gift
+  Gift,
+  Edit,
+  Save,
+  X
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
@@ -26,42 +29,76 @@ const UserProfile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { followSeller, unfollowSeller, isFollowing, userStats } = useUserProfile();
+  const { followSeller, unfollowSeller, isFollowing, userStats, userProfile, updateProfile } = useUserProfile();
   
   const [activeTab, setActiveTab] = useState('listings');
   const [showFollowers, setShowFollowers] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    bio: '',
+    phone: '',
+    location: '',
+    socialLinks: {
+      facebook: '',
+      instagram: ''
+    }
+  });
 
-  // Mock user data - in real app, fetch from API
-  const profileUser = {
-    id: userId || user?.id,
-    name: 'John Doe',
-    avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?w=200',
+  // Mock user data - in real app, fetch from API based on userId
+  const profileUser = userId ? {
+    id: userId,
+    name: 'Sarah Johnson',
+    avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?w=200',
     bio: 'Passionate seller of quality electronics and gadgets. Always honest about product conditions.',
-    location: 'Greater Noida, UP',
+    location: 'Mumbai, Maharashtra',
     phone: '+91 98765 43210',
-    email: 'john.doe@example.com',
-    joinDate: '2023-01-15',
+    email: 'sarah.johnson@example.com',
+    joinDate: '2023-03-20',
     isVerified: true,
     level: 'Gold',
-    rating: 4.8,
-    totalSales: 156,
-    totalListings: 23,
-    followers: 89,
-    following: 45,
-    badges: ['Verified Seller', 'Gold Member', '100+ Sales', 'Quick Responder'],
+    rating: 4.7,
+    totalSales: 89,
+    totalListings: 15,
+    followers: 156,
+    following: 78,
+    badges: ['Verified Seller', 'Gold Member', '50+ Sales', 'Quick Responder'],
     socialLinks: {
-      facebook: 'https://facebook.com/johndoe',
-      instagram: 'https://instagram.com/johndoe'
+      facebook: 'https://facebook.com/sarahjohnson',
+      instagram: 'https://instagram.com/sarahjohnson'
     },
     businessInfo: {
-      isBusinessSeller: true,
-      businessName: 'Tech Solutions',
-      businessType: 'Electronics Retailer'
+      isBusinessSeller: false,
+      businessName: '',
+      businessType: ''
     }
+  } : {
+    ...userProfile,
+    level: userStats?.level || 'Bronze',
+    rating: userStats?.rating || 0,
+    totalSales: userStats?.totalSales || 0,
+    followers: userStats?.followers || 0,
+    following: userStats?.following || 0,
+    badges: userStats?.badges || []
   };
 
-  const isOwnProfile = user?.id === profileUser.id;
-  const following = isFollowing(profileUser.id);
+  const isOwnProfile = !userId || user?.id === profileUser?.id;
+  const following = !isOwnProfile && isFollowing(profileUser?.id);
+
+  React.useEffect(() => {
+    if (isOwnProfile && userProfile) {
+      setEditForm({
+        name: userProfile.name || '',
+        bio: userProfile.bio || '',
+        phone: userProfile.phone || '',
+        location: userProfile.location || '',
+        socialLinks: {
+          facebook: userProfile.socialLinks?.facebook || '',
+          instagram: userProfile.socialLinks?.instagram || ''
+        }
+      });
+    }
+  }, [isOwnProfile, userProfile]);
 
   const handleFollowToggle = () => {
     if (following) {
@@ -72,6 +109,35 @@ const UserProfile = () => {
         avatar: profileUser.avatar,
         level: profileUser.level
       });
+    }
+  };
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Save changes
+      updateProfile(editForm);
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setEditForm(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
   };
 
@@ -115,13 +181,25 @@ const UserProfile = () => {
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 sticky top-16 z-40">
         <div className="container mx-auto px-4 py-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+            
+            {isOwnProfile && (
+              <button
+                onClick={handleEditToggle}
+                className="flex items-center space-x-2 bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded-lg transition-colors"
+              >
+                {isEditing ? <Save className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+                <span>{isEditing ? 'Save' : 'Edit Profile'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -134,39 +212,61 @@ const UserProfile = () => {
               <div className="text-center">
                 <div className="relative inline-block">
                   <img
-                    src={profileUser.avatar}
-                    alt={profileUser.name}
+                    src={profileUser?.avatar || 'https://via.placeholder.com/96'}
+                    alt={profileUser?.name}
                     className="w-24 h-24 rounded-full object-cover mx-auto"
                   />
-                  {profileUser.isVerified && (
+                  {profileUser?.isVerified && (
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
                       <Shield className="w-4 h-4 text-white" />
                     </div>
                   )}
                 </div>
                 
-                <h1 className="text-xl font-bold text-white mt-4">{profileUser.name}</h1>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleInputChange}
+                    className="mt-4 text-xl font-bold text-white bg-slate-700 border border-slate-600 rounded px-3 py-2 w-full text-center"
+                    placeholder="Your name"
+                  />
+                ) : (
+                  <h1 className="text-xl font-bold text-white mt-4">{profileUser?.name}</h1>
+                )}
                 
-                <div className={`flex items-center justify-center space-x-2 mt-2 ${getLevelColor(profileUser.level)}`}>
-                  <span className="text-lg">{getLevelIcon(profileUser.level)}</span>
-                  <span className="font-medium">{profileUser.level} Seller</span>
+                <div className={`flex items-center justify-center space-x-2 mt-2 ${getLevelColor(profileUser?.level)}`}>
+                  <span className="text-lg">{getLevelIcon(profileUser?.level)}</span>
+                  <span className="font-medium">{profileUser?.level} Seller</span>
                 </div>
 
-                {profileUser.bio && (
-                  <p className="text-gray-300 text-sm mt-3">{profileUser.bio}</p>
+                {isEditing ? (
+                  <textarea
+                    name="bio"
+                    value={editForm.bio}
+                    onChange={handleInputChange}
+                    className="mt-3 text-gray-300 text-sm bg-slate-700 border border-slate-600 rounded px-3 py-2 w-full"
+                    placeholder="Tell us about yourself..."
+                    rows="3"
+                  />
+                ) : (
+                  profileUser?.bio && (
+                    <p className="text-gray-300 text-sm mt-3">{profileUser.bio}</p>
+                  )
                 )}
               </div>
 
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{profileUser.rating}</div>
+                  <div className="text-2xl font-bold text-white">{profileUser?.rating || 0}</div>
                   <div className="flex items-center justify-center space-x-1 mt-1">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
                         className={`w-4 h-4 ${
-                          i < Math.floor(profileUser.rating)
+                          i < Math.floor(profileUser?.rating || 0)
                             ? 'text-yellow-400 fill-current'
                             : 'text-gray-600'
                         }`}
@@ -177,17 +277,17 @@ const UserProfile = () => {
                 </div>
                 
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{profileUser.totalSales}</div>
+                  <div className="text-2xl font-bold text-white">{profileUser?.totalSales || 0}</div>
                   <div className="text-xs text-gray-400">Sales</div>
                 </div>
                 
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{profileUser.followers}</div>
+                  <div className="text-2xl font-bold text-white">{profileUser?.followers || 0}</div>
                   <div className="text-xs text-gray-400">Followers</div>
                 </div>
                 
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{profileUser.following}</div>
+                  <div className="text-2xl font-bold text-white">{profileUser?.following || 0}</div>
                   <div className="text-xs text-gray-400">Following</div>
                 </div>
               </div>
@@ -218,17 +318,66 @@ const UserProfile = () => {
               <div className="space-y-3 pt-4 border-t border-slate-700">
                 <div className="flex items-center space-x-3 text-gray-300">
                   <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{profileUser.location}</span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="location"
+                      value={editForm.location}
+                      onChange={handleInputChange}
+                      className="text-sm bg-slate-700 border border-slate-600 rounded px-2 py-1 flex-1"
+                      placeholder="Your location"
+                    />
+                  ) : (
+                    <span className="text-sm">{profileUser?.location || 'Location not set'}</span>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-3 text-gray-300">
+                  <Phone className="w-4 h-4" />
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={editForm.phone}
+                      onChange={handleInputChange}
+                      className="text-sm bg-slate-700 border border-slate-600 rounded px-2 py-1 flex-1"
+                      placeholder="Your phone number"
+                    />
+                  ) : (
+                    <span className="text-sm">{profileUser?.phone || 'Phone not set'}</span>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm">
-                    Joined {new Date(profileUser.joinDate).toLocaleDateString()}
+                    Joined {new Date(profileUser?.joinDate || Date.now()).toLocaleDateString()}
                   </span>
                 </div>
 
-                {profileUser.businessInfo.isBusinessSeller && (
+                {/* Social Links */}
+                {isEditing && (
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      name="socialLinks.facebook"
+                      value={editForm.socialLinks.facebook}
+                      onChange={handleInputChange}
+                      className="w-full text-sm bg-slate-700 border border-slate-600 rounded px-2 py-1"
+                      placeholder="Facebook URL"
+                    />
+                    <input
+                      type="url"
+                      name="socialLinks.instagram"
+                      value={editForm.socialLinks.instagram}
+                      onChange={handleInputChange}
+                      className="w-full text-sm bg-slate-700 border border-slate-600 rounded px-2 py-1"
+                      placeholder="Instagram URL"
+                    />
+                  </div>
+                )}
+
+                {profileUser?.businessInfo?.isBusinessSeller && (
                   <div className="bg-slate-700 p-3 rounded-lg">
                     <div className="flex items-center space-x-2 mb-2">
                       <Package className="w-4 h-4 text-teal-400" />
@@ -247,7 +396,7 @@ const UserProfile = () => {
                   <span>Achievements</span>
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {profileUser.badges.map((badge, index) => (
+                  {(profileUser?.badges || []).map((badge, index) => (
                     <span
                       key={index}
                       className="bg-teal-500 bg-opacity-20 text-teal-300 px-2 py-1 rounded-full text-xs"
@@ -260,7 +409,7 @@ const UserProfile = () => {
             </div>
 
             {/* Gamification Stats */}
-            {isOwnProfile && (
+            {isOwnProfile && userStats && (
               <div className="bg-slate-800 rounded-lg p-6 mt-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
                   <Trophy className="w-5 h-5 text-yellow-400" />
@@ -324,7 +473,7 @@ const UserProfile = () => {
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  Listings ({profileUser.totalListings})
+                  Listings ({profileUser?.totalListings || 0})
                 </button>
                 <button
                   onClick={() => setActiveTab('reviews')}
@@ -421,6 +570,33 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
+
+      {/* Cancel Edit Modal */}
+      {isEditing && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={() => {
+              setIsEditing(false);
+              // Reset form to original values
+              if (userProfile) {
+                setEditForm({
+                  name: userProfile.name || '',
+                  bio: userProfile.bio || '',
+                  phone: userProfile.phone || '',
+                  location: userProfile.location || '',
+                  socialLinks: {
+                    facebook: userProfile.socialLinks?.facebook || '',
+                    instagram: userProfile.socialLinks?.instagram || ''
+                  }
+                });
+              }
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full shadow-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

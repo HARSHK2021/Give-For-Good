@@ -4,7 +4,7 @@ import User from "../models/User.js";
 const protectUser = async (req, res, next) => {
     try {
         const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
-        console.log(token)
+        console.log("token from procted routes",token)
         if (!token) {
             return res.status(401).json({ success: false, message: "Unauthorized No Token" });
         }
@@ -18,6 +18,8 @@ const protectUser = async (req, res, next) => {
 
         req.user = user;
         req.userId = user._id;
+        req.token = token; // Store the token in the request object if needed later
+        console.log("User authenticated:", user);
      
         next();
         

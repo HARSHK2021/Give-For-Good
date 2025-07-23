@@ -183,7 +183,9 @@ export const verifyToken = async (req,res)=>{
         return res.status(201).json({
             success:true,
             message:"User Verified ",
-            user
+            user,
+            token:token
+
         })
         
     } catch (error) {

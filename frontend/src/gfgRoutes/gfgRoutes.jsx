@@ -10,6 +10,13 @@ export const GFG_ROUTES ={
 
     //
     ADDITEM:`${host}/api/items/addItem`,
+    SEARCHITEMS:`${host}/api/items/getItems`,
+    GETITEMDETAILS: (id) => `${host}/api/items/getitem/${id}`,
+
+
+    ADDFAVORITES:`${host}/api/items/addToFavorites`,
+    REMOVEFAVORITES:`${host}/api/items/removeFromFavorites`,
+    GETFAVORITES:`${host}/api/items/getFavorites`,
     
 
 }

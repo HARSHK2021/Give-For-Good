@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { GFG_ROUTES } from "../gfgRoutes/gfgRoutes";
 import axios from "axios";
 
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -21,6 +22,7 @@ export const AuthProvider = ({ children }) => {
     
     const verify = async () => {
       const token = localStorage.getItem('token');
+      console.log(token);
       try {
       
           // Send token in Authorization header as Bearer
@@ -33,14 +35,15 @@ export const AuthProvider = ({ children }) => {
           console.log(response)
           if (response.data.success) {
             setUser(response.data.user);
+            localStorage.setItem("token", response.data.token); // Store token in localStorage
           } else {
             setUser(null);
-            // localStorage.removeItem("token");
+            localStorage.removeItem("token");
           }
         
       } catch (error) {
         setUser(null);
-        // localStorage.removeItem("token");
+        localStorage.removeItem("token");
         console.error(error);
       } finally {
         setLoading(false);

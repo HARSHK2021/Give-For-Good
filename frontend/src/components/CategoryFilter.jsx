@@ -16,7 +16,6 @@ const CategoryFilter = ({
 
   const categories = [
     { id: 'all', name: 'All Categories', count: null },
-    { id: 'Cars', name: 'Cars', count: '52,252' },
     { id: 'Mobile Phones', name: 'Mobile Phones', count: '1,234' },
     { id: 'Electronics', name: 'Electronics', count: '5,678' },
     { id: 'Furniture', name: 'Furniture', count: '891' },

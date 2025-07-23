@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Heart, MapPin, Clock, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../contexts/FavoritesContext';
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
+  const { user } = useAuth();
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
@@ -31,13 +34,18 @@ const ProductCard = ({ product }) => {
   };
 
   const handleFavoriteClick = (e) => {
-    e.stopPropagation();
+     e.stopPropagation();
+    if (!user) {
+      toast.error("Please log in to add to favorites");
+      return;
+    }
     if (isFavorite) {
-      removeFromFavorites(product._id);
+      removeFromFavorites(product._id,user._id);
     } else {
-      addToFavorites(product);
+      addToFavorites(product._id, user._id);
     }
   };
+  
 
   return (
     <div 
@@ -75,11 +83,11 @@ const ProductCard = ({ product }) => {
         </button>
 
         {/* Featured Badge */}
-        {product.featured && (
+        {/* {product.featured && (
           <div className="absolute top-3 left-3 bg-yellow-500 text-black px-2 py-1 rounded text-xs font-medium">
             FEATURED
           </div>
-        )}
+        )} */}
 
         {/* Claimed Badge */}
         {product.isClaimed && (
@@ -91,14 +99,14 @@ const ProductCard = ({ product }) => {
 
       {/* Content */}
       <div className="p-4">
-        {/* Price */}
+        {/* TITLE */}
         <div className="text-xl font-bold text-white mb-2">
-          {product.price || 'Free'}
+          {product.title}
         </div>
 
-        {/* Title */}
+        {/* condition*/}
         <h3 className="text-gray-100 font-medium mb-2 line-clamp-2">
-          {product.title}
+          {product.condition}
         </h3>
 
         {/* Description */}
@@ -110,7 +118,7 @@ const ProductCard = ({ product }) => {
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-1">
             <MapPin className="w-3 h-3" />
-            <span>{product.address}</span>
+            <span>{product.address.city}</span>
           </div>
           <div className="flex items-center space-x-1">
             <Clock className="w-3 h-3" />

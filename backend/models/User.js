@@ -25,7 +25,12 @@ const userSchema = new mongoose.Schema({
   googleUserId: {
   type: String,
 },
-// avatar
+///
+
+favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Item', // Reference to Product model
+}],
 avatar:{
     type:String,
 }

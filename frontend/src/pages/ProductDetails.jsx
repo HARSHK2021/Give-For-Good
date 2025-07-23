@@ -15,6 +15,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { useUserProfile } from '../contexts/UserProfileContext';
+import { GFG_ROUTES } from '../gfgRoutes/gfgRoutes';
+import axios from 'axios';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -37,44 +39,15 @@ const ProductDetails = () => {
   const fetchProductDetails = async () => {
     setLoading(true);
     try {
-      // Mock API call - replace with your actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockProduct = {
-        _id: id,
-        title: "iPhone 13 Pro Max - Excellent Condition",
-        description: "Selling my iPhone 13 Pro Max in excellent condition. Barely used, always kept in a case with screen protector. All original accessories included. No scratches or dents. Battery health is 98%. Reason for selling: upgrading to iPhone 15.",
-        images: [
-          "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg?w=800",
-          "https://images.pexels.com/photos/1092644/pexels-photo-1092644.jpeg?w=800",
-          "https://images.pexels.com/photos/1440727/pexels-photo-1440727.jpeg?w=800"
-        ],
-        category: "Mobile Phones",
-        location: {
-          type: "Point",
-          coordinates: [77.504, 28.4744]
-        },
-        address: "Greater Noida, UP",
-        postedBy: "user123",
-        claimedBy: null,
-        isClaimed: false,
-        expiresAt: "2025-08-15T10:58:58.004Z",
-        createdAt: "2025-07-16T10:58:58.011Z",
-        updatedAt: "2025-07-16T10:58:58.011Z",
-        price: "₹85,000"
-      };
-
-      const mockSeller = {
-        _id: "user123",
-        name: "John Doe",
-        avatar: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?w=100",
-        joinedDate: "2023-01-15",
-        totalAds: 12,
-        rating: 4.5
-      };
-
-      setProduct(mockProduct);
-      setSeller(mockSeller);
+     const response = await axios.get(`${GFG_ROUTES.GETITEMDETAILS(id)}`);
+      if (response.data.success) {
+        setProduct(response.data.item);
+        setSeller(response.data.item.postedBy);
+        setCurrentImageIndex(0);
+      } else {
+        console.error('Failed to fetch product details');
+        setProduct(null);
+      } 
     } catch (error) {
       console.error('Error fetching product:', error);
     } finally {
@@ -240,9 +213,7 @@ const ProductDetails = () => {
           <div className="space-y-6">
             {/* Price and Title */}
             <div>
-              <div className="text-3xl font-bold text-white mb-2">
-                {product.price || 'Free'}
-              </div>
+            
               <h1 className="text-2xl font-semibold text-gray-100 mb-4">
                 {product.title}
               </h1>
@@ -251,7 +222,9 @@ const ProductDetails = () => {
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <div className="flex items-center space-x-1">
                   <MapPin className="w-4 h-4" />
-                  <span>{product.address}</span>
+                  <span>{product.address.street}</span>
+                  <span>{product.address.city}</span>
+
                 </div>
                 <div className="flex items-center space-x-1">
                   <Clock className="w-4 h-4" />
@@ -289,26 +262,46 @@ const ProductDetails = () => {
               </p>
             </div>
 
-            {/* Category */}
+            {/* Condition */}
             <div className="bg-slate-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-3">Category</h3>
+              <h3 className="text-lg font-semibold text-white mb-3">Condition</h3>
               <span className="inline-block bg-teal-500 text-white px-3 py-1 rounded-full text-sm">
-                {product.category}
+                {product.condition}
               </span>
             </div>
 
+            {/* whyIamSharing */}
+            { product.whyIamSharing && (
+              <div className="bg-slate-800 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-3">Why I am sharing</h3>
+              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                {product.whyIamSharing}
+              </p>
+            </div>
+
+            )}
             {/* Seller Info */}
             {seller && (
               <div className="bg-slate-800 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Seller Information</h3>
                 <div className="flex items-center space-x-4">
-                  <img
+                  <button
+                    onClick={() => navigate(`/profile/${seller._id}`)}
+                    className="flex-shrink-0"
+                  >
+                    <img
                     src={seller.avatar}
                     alt={seller.name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
+                      className="w-16 h-16 rounded-full object-cover hover:ring-2 hover:ring-teal-500 transition-all"
+                    />
+                  </button>
                   <div className="flex-1">
-                    <h4 className="font-medium text-white">{seller.name}</h4>
+                    <button
+                      onClick={() => navigate(`/profile/${seller._id}`)}
+                      className="font-medium text-white hover:text-teal-400 transition-colors"
+                    >
+                      {seller.name}
+                    </button>
                     <p className="text-sm text-gray-400">
                       Member since {new Date(seller.joinedDate).getFullYear()}
                     </p>

@@ -26,7 +26,6 @@ const itemSchema = new mongoose.Schema(
       required: true,
       enum: [
         "Electronics",
-        "Cars",
         "Furniture",
         "Books",
         "Clothing",
