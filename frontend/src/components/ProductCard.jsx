@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Heart, MapPin, Clock, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFavorites } from '../contexts/FavoritesContext';
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
-  const { user } = useAuth();
+  const {user} = useAuth();
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
@@ -34,19 +34,22 @@ const ProductCard = ({ product }) => {
   };
 
   const handleFavoriteClick = (e) => {
-     e.stopPropagation();
-    if (!user) {
-      toast.error("Please log in to add to favorites");
-      return;
-    }
-    if (isFavorite) {
-      removeFromFavorites(product._id,user._id);
-    } else {
-      addToFavorites(product._id, user._id);
-    }
-  };
+    e.stopPropagation();
   
 
+    if (isFavorite) {
+      removeFromFavorites(product._id);
+    } else {
+      addToFavorites(product);
+    }
+  };
+
+  const handleAvatarClick = (e) => {
+    e.stopPropagation();
+    if (product.postedBy) {
+      navigate(`/profile/${product.postedBy}`);
+    }
+  };
   return (
     <div 
       onClick={handleCardClick}
@@ -99,14 +102,14 @@ const ProductCard = ({ product }) => {
 
       {/* Content */}
       <div className="p-4">
-        {/* TITLE */}
+        {/* Price */}
         <div className="text-xl font-bold text-white mb-2">
-          {product.title}
+          {product.price || 'Free'}
         </div>
 
-        {/* condition*/}
+        {/* Title */}
         <h3 className="text-gray-100 font-medium mb-2 line-clamp-2">
-          {product.condition}
+          {product.title}
         </h3>
 
         {/* Description */}
@@ -131,6 +134,19 @@ const ProductCard = ({ product }) => {
           <span className="inline-block bg-slate-700 text-gray-300 px-2 py-1 rounded text-xs">
             {product.category}
           </span>
+        </div>
+
+        {/* Seller Info */}
+        <div className="mt-3 pt-3 border-t border-slate-700">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleAvatarClick}
+              className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center hover:bg-slate-500 transition-colors"
+            >
+              <User className="w-3 h-3 text-gray-300" />
+            </button>
+            <span className="text-xs text-gray-400">View seller profile</span>
+          </div>
         </div>
       </div>
     </div>

@@ -191,27 +191,37 @@ export const addToFavorites = async (req, res) => {
   try {               
     console.log("add to favorites reached");
     console.log(req.body);
-    const userId = req.userId; // Assuming userId is set by protectUser middleware
-    const {itemId } = req.body;
+    console.log(req.userId); // from protectUser middleware
+    const userId = req.userId; // from protectUser middleware
+    const { itemId } = req.body;
 
     if (!userId || !itemId) {
       return res.status(400).json({ message: "User ID and Item ID are required" });
     }
 
-    // Find the user and add the item to their favorites
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (user.favorites.includes(itemId)) {
-      return res.status(400).json({ message: "Item already in favorites" });
+    const alreadyFavorite = user.favorites.some(fav => fav.toString() === itemId);
+    if (alreadyFavorite) {
+      return res.status(201).json({
+        success: true,
+        favorites: user.favorites, // return clean array of favorite IDs
+         message: "Item already in favorites" });
     }
 
     user.favorites.push(itemId);
     await user.save();
 
-    res.status(200).json({ message: "Item added to favorites", favorites: user.favorites });
+    res.status(200).json({
+      success: true,
+      message: "Item added to favorites",
+      favorites:user.favorites // return clean array of favorite IDs
+    });
+    console.log("Item added to favorites", user.favorites);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong. Can't add to favorites" });
@@ -219,18 +229,18 @@ export const addToFavorites = async (req, res) => {
 };
 
 
+
 /// removve favorites
 export const removeFromFavorites = async (req, res) => {
   try {
     console.log("remove from favorites reached");
-    const { userId, itemId } = req.body;
-    console.log(req.body);
+    const userId = req.userId; // again from protectUser middleware
+    const { itemId } = req.body;
 
     if (!userId || !itemId) {
       return res.status(400).json({ message: "User ID and Item ID are required" });
     }
 
-    // Find the user and remove the item from their favorites
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -238,11 +248,15 @@ export const removeFromFavorites = async (req, res) => {
 
     user.favorites = user.favorites.filter(fav => fav.toString() !== itemId);
     await user.save();
+
     console.log("Item removed from favorites", user.favorites);
 
+    res.status(200).json({
+      success: true,
+      message: "Item removed from favorites",
+      favorites: user.favorites // again, return clean array
+    });
 
-    res.status(200).json({ message: "Item removed from favorites", favorites: user.favorites });
-    
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong. Can't remove from favorites" });
@@ -253,8 +267,10 @@ export const removeFromFavorites = async (req, res) => {
 
 /// get favorites/:userId
 export const getFavorites = async (req, res) => {
+  console.log("get favorites reached");
+  /// get favrotes item of user and return array of whole items
   try {
-    const userId = req.userId; // Assuming userId is set by protectUser middleware
+    const userId = req.userId; // from protectUser middleware
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -265,9 +281,13 @@ export const getFavorites = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ favorites: user.favorites });
+    res.status(200).json({
+      success: true,
+      favorites: user.favorites // this will return an array of item objects
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Something went wrong. Can't fetch favorites" });
+    res.status(500).json({ success: false, message: "Failed to fetch favorites" });
   }
+  
 };

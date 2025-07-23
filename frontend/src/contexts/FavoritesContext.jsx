@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ChevronsRightLeft } from 'lucide-react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { GFG_ROUTES } from '../gfgRoutes/gfgRoutes';
 
@@ -16,76 +17,72 @@ export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
+    // Load favorites from backend or localStorage
+
+    const token = localStorage.getItem('token');
     const fetchFavorites = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await axios.get(GFG_ROUTES.GETFAVORITES, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
-          setFavorites(response.data.favorites || []);
-        } catch (error) {
-          console.error('Error fetching favorites:', error);
+      if (!token) {
+        console.error('No token found, user might not be logged in');
+        return;
+      }
+
+      try {
+        const response = await axios.get(GFG_ROUTES.GETFAVORITES, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.data.success) {
+          setFavorites(response.data.favorites);
+          localStorage.setItem('favorites', JSON.stringify(response.data.favorites));
+        } else {
+          console.error('Failed to fetch favorites:', response.data.message);
         }
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
       }
     }
     fetchFavorites();
+  
    
   }, []);
 
-  const addToFavorites = async(productId,userId) => {
-    /// lets call a api to add to 
+  const addToFavorites = async(product) => {
     const token = localStorage.getItem('token');
-    console.log(token);
-
-    const response = await axios.post(GFG_ROUTES.ADDFAVORITES, {
-      itemId: productId,
-      userId: userId
+    if (!token) {
+      console.error('No token found, user might not be logged in');
+      return;
+    }
+    console.log("token", token);
+    //// call an api which add prduct to favorites
+    const response = await axios.post(GFG_ROUTES.ADDFAVORITES,{
+      itemId: product._id
     }, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    console.log(response);
-    if (response.status !== 200) {
-      throw new Error('Failed to add to favorites');
-    }
-    console.log(response.data.favorites);
-    setFavorites(response.data.favorites);
-    localStorage.setItem('favorites', JSON.stringify(response.data.favorites));
-
- 
-  };
-
-  const removeFromFavorites = (productId,userId) => {
-    /// lets call a api to remove from favorites
-    console.log("remove from favorites called");
-    const token = localStorage.getItem('token');
-    try {
-      const response = axios.post(GFG_ROUTES.REMOVEFAVORITES,{
-        itemId: productId,
-        userId: userId
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      console.log(response);
-      if (response.status !== 200) {
-        throw new Error('Failed to remove from favorites');
-      }
-       
-      
-    } catch (error) {
-      console.error('Error removing from favorites:', error);
-      
-    }
-
-    const newFavorites = favorites.filter(fav => fav._id !== productId);
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if(response.data.success) {
+      console.log("Product added to favorites", product._id);
+          const newFavorites = [...favorites, product];
     setFavorites(newFavorites);
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
+    }
+
+  };
+
+  const removeFromFavorites = async(productId) => {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(GFG_ROUTES.REMOVEFAVORITES, {
+      itemId: productId
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if(response.data.success) {
+      console.log("Product removed from favorites", productId);
+      const newFavorites = favorites.filter(fav => fav._id !== productId);
+      setFavorites(newFavorites);
+      localStorage.setItem('favorites', JSON.stringify(newFavorites));
+
+    }
+   
   };
 
   const isFavorite = (productId) => {
@@ -96,8 +93,7 @@ export const FavoritesProvider = ({ children }) => {
     favorites,
     addToFavorites,
     removeFromFavorites,
-    isFavorite,
-    setFavorites
+    isFavorite
   };
 
   return (
