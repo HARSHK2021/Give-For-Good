@@ -44,7 +44,7 @@ const UserProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [userStats, setUserStats] = useState({
     level: "Bronze",
-    points: 0,
+    points: 23,
     badges: [],
     totalSales: 0,
     rating: 0,
@@ -78,6 +78,7 @@ const UserProfile = () => {
         }
         setIsLoading(false);
       }
+      
     } catch (error) {
       console.error("Error loading user profile:", error);
       setIsLoading(false);
@@ -102,23 +103,23 @@ const UserProfile = () => {
     }
   }
 
-  const isOwnProfile = !userId || user?._id === userProfile?._id;
+  const isOwnProfile = !userId || user?._id === profileUser?._id;
   // const following = !isOwnProfile && isFollowing(profileUser?._id);
 
-  // React.useEffect(() => {
-  //   if (isOwnProfile && userProfile) {
-  //     setEditForm({
-  //       name: userProfile.name || '',
-  //       bio: userProfile.bio || '',
-  //       phone: userProfile.phone || '',
-  //       location: userProfile.location || '',
-  //       socialLinks: {
-  //         facebook: userProfile.socialLinks?.facebook || '',
-  //         instagram: userProfile.socialLinks?.instagram || ''
-  //       }
-  //     });
-  //   }
-  // }, [isOwnProfile, userProfile]);
+  React.useEffect(() => {
+    if (isOwnProfile && profileUser) {
+      setEditForm({
+        name: profileUser.name || '',
+        bio: profileUser.bio || '',
+        phone: profileUser.phone || '',
+        location: profileUser.location || '',
+        socialLinks: {
+          facebook: profileUser.socialLinks?.facebook || '',
+          instagram: profileUser.socialLinks?.instagram || ''
+        }
+      });
+    }
+  }, [isOwnProfile, profileUser ]);
 
   const handleFollowToggle = () => {
     if (following) {
@@ -135,7 +136,7 @@ const UserProfile = () => {
   const handleEditToggle = () => {
     if (isEditing) {
       // Save changes
-      updateProfile(editForm);
+   
       setIsEditing(false);
     } else {
       setIsEditing(true);
@@ -352,7 +353,7 @@ const UserProfile = () => {
               </div>
 
               {/* Action Buttons */}
-              {/* {!isOwnProfile && (
+              {!isOwnProfile && (
                 <div className="space-y-3">
                   <button
                     onClick={handleFollowToggle}
@@ -371,28 +372,11 @@ const UserProfile = () => {
                     <span>Message</span>
                   </button>
                 </div>
-              )} */}
+              )}
 
               {/* Contact Info */}
               <div className="space-y-3 pt-4 border-t border-slate-700">
-                <div className="flex items-center space-x-3 text-gray-300">
-                  <MapPin className="w-4 h-4" />
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="location"
-                      value={editForm.location}
-                      onChange={handleInputChange}
-                      className="text-sm bg-slate-700 border border-slate-600 rounded px-2 py-1 flex-1"
-                      placeholder="Your location"
-                    />
-                  ) : (
-                    <span className="text-sm">
-                      {profileUser?.location || "Location not set"}
-                    </span>
-                  )}
-                </div>
-
+                
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Phone className="w-4 h-4" />
                   {isEditing ? (
@@ -400,7 +384,7 @@ const UserProfile = () => {
                       type="tel"
                       name="phone"
                       value={editForm.phone}
-                      onChange={handleInputChange}
+                      onChange={handleInputChange}         
                       className="text-sm bg-slate-700 border border-slate-600 rounded px-2 py-1 flex-1"
                       placeholder="Your phone number"
                     />
@@ -444,22 +428,7 @@ const UserProfile = () => {
                   </div>
                 )}
 
-                {profileUser?.businessInfo?.isBusinessSeller && (
-                  <div className="bg-slate-700 p-3 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Package className="w-4 h-4 text-teal-400" />
-                      <span className="text-sm font-medium text-white">
-                        Business Seller
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-300">
-                      {profileUser.businessInfo.businessName}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {profileUser.businessInfo.businessType}
-                    </p>
-                  </div>
-                )}
+               
               </div>
 
               {/* Badges */}
@@ -693,15 +662,15 @@ const UserProfile = () => {
             onClick={() => {
               setIsEditing(false);
               // Reset form to original values
-              if (userProfile) {
+              if (profileUser) {
                 setEditForm({
-                  name: userProfile.name || "",
-                  bio: userProfile.bio || "",
-                  phone: userProfile.phone || "",
-                  location: userProfile.location || "",
+                  name:  profileUser.name || "",
+                  bio: profileUser.bio || "",
+                  phone: profileUser.phone || "",
+                  location: profileUser.location || "",
                   socialLinks: {
-                    facebook: userProfile.socialLinks?.facebook || "",
-                    instagram: userProfile.socialLinks?.instagram || "",
+                    facebook: profileUser.socialLinks?.facebook || "",
+                    instagram: profileUser.socialLinks?.instagram || "",
                   },
                 });
               }

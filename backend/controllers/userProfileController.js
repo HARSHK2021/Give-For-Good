@@ -121,3 +121,27 @@ export const getItemsByUser = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
+export const isFollowing = async (req, res) => {
+  try {
+    const userId = req.userId; // Get the authenticated user's ID
+    const targetUserId = req.params.id; // Get the target user's ID from request params
+
+    const user = await User.findById(userId).select("stats.following");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const isFollowing = user.stats.following.includes(targetUserId);
+
+    res.status(200).json({
+      success: true,
+      isFollowing,
+      message: isFollowing ? "You are following this user" : "You are not following this user"
+    });
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+}
