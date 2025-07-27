@@ -5,9 +5,9 @@ import imagekit from "../utils/imageKit.js";
 
 export const addItem = async (req, res) => {
   try {
-    console.log("add item reached");
-    console.log(req.body);
-    console.log(req.files);
+    // console.log("add item reached");
+    // console.log(req.body);
+    // console.log(req.files);
 
     const {
       title,
@@ -84,7 +84,7 @@ export const addItem = async (req, res) => {
 
 export const getAllItems = async (req,res)=>{
   try {
-    console.log("yaya")
+    // console.log("get all items reached");
     const items = await Item.find({});
     res.status(200).json({ success: true, items });
   } catch (error) {
@@ -189,9 +189,9 @@ export const getItemDetails = async (req, res) => {
 
 export const addToFavorites = async (req, res) => {
   try {               
-    console.log("add to favorites reached");
-    console.log(req.body);
-    console.log(req.userId); // from protectUser middleware
+    // console.log("add to favorites reached");
+    // console.log(req.body);
+    // console.log(req.userId); // from protectUser middleware
     const userId = req.userId; // from protectUser middleware
     const { itemId } = req.body;
 
@@ -220,7 +220,7 @@ export const addToFavorites = async (req, res) => {
       message: "Item added to favorites",
       favorites:user.favorites // return clean array of favorite IDs
     });
-    console.log("Item added to favorites", user.favorites);
+    // console.log("Item added to favorites", user.favorites);
 
   } catch (error) {
     console.error(error);
@@ -233,7 +233,7 @@ export const addToFavorites = async (req, res) => {
 /// removve favorites
 export const removeFromFavorites = async (req, res) => {
   try {
-    console.log("remove from favorites reached");
+    // console.log("remove from favorites reached");
     const userId = req.userId; // again from protectUser middleware
     const { itemId } = req.body;
 
@@ -249,7 +249,7 @@ export const removeFromFavorites = async (req, res) => {
     user.favorites = user.favorites.filter(fav => fav.toString() !== itemId);
     await user.save();
 
-    console.log("Item removed from favorites", user.favorites);
+    // console.log("Item removed from favorites", user.favorites);
 
     res.status(200).json({
       success: true,
@@ -267,7 +267,7 @@ export const removeFromFavorites = async (req, res) => {
 
 /// get favorites/:userId
 export const getFavorites = async (req, res) => {
-  console.log("get favorites reached");
+ 
   /// get favrotes item of user and return array of whole items
   try {
     const userId = req.userId; // from protectUser middleware
@@ -291,3 +291,44 @@ export const getFavorites = async (req, res) => {
   }
   
 };
+
+
+
+/// delete item by id
+export const deleteItem = async (req, res) => {
+  try {
+    console.log(
+      "delete item reached"
+    )
+    const { id } = req.params;
+    const userId = req.userId; // from protectUser middleware
+    console.log("Deleting item ID:", id);
+    console.log("User ID:", userId);
+
+    if (!id || !userId) {
+      return res.status(400).json({ success:false, message: "Item ID and User ID are required" });
+    }
+
+    const item = await Item.findById(id).populate('postedBy');
+    if (!item) {
+      return res.status(404).json({ success:false,message: "Item not found" });
+    }
+    console.log("user id from item",item.postedBy._id);
+    console.log("userid",userId);
+
+
+    if (!item.postedBy._id.equals(userId)) {
+      return res.status(403).json({success:false, message: "You can only delete your own items" });
+    }
+
+    await Item.findByIdAndDelete(id);
+    await User.updateMany(
+      { favorites:id },// remove from all users' favorites
+      { $pull: { favorites: id } } // remove from user's favorites
+    );
+    res.status(200).json({ success: true, message: "Item deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Failed to delete item" });
+  }
+};  

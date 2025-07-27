@@ -15,7 +15,7 @@ const google = new Google(
 
 export const register = async (req, res) => {
     try {
-        console.log("Registering user with data:", req.body);
+        // console.log("Registering user with data:", req.body);
         const { name, email, password , phone,avatar} = req.body;
         
         const existingUser = await User.findOne({ email });
@@ -58,13 +58,13 @@ export const login = async (req, res) => {
 // Logout a user
 export const logout = async (req, res) => {
     try {
-        console.log("into the logout function")
+        // console.log("into the logout function")
        res.clearCookie("token", {
     httpOnly: true,
     secure: true,
     sameSite: "lax",
   });
-  console.log(" step 2 ---------------------")
+//   console.log(" step 2 ---------------------")
         return res.status(200).json({ success: true, message: "Logout successful" });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -73,7 +73,7 @@ export const logout = async (req, res) => {
 };
 
 export const getGoogleLoginPage = async (req, res) => {
-    console.log("Redirecting to Google login page");
+    // console.log("Redirecting to Google login page");
     if(req.user) return res.redirect("/");
     const state = generateState();
     // console.log("Generated state:", state);
@@ -86,7 +86,7 @@ export const getGoogleLoginPage = async (req, res) => {
         
 
     ]);
-    console.log("step 1 for Oauth completed");
+    // console.log("step 1 for Oauth completed");
 
     // console.log("Google authorization URL:", url.toString());
     res.cookie("google_oauth_state", state, {
@@ -101,7 +101,7 @@ export const getGoogleLoginPage = async (req, res) => {
         sameSite: "lax",
         maxAge: 60 * 60 * 1000 // 1 hour
     });
-    console.log("Cookies set for Google OAuth state and code verifier");
+    // console.log("Cookies set for Google OAuth state and code verifier");
     res.redirect(url.toString());
  
    
@@ -109,9 +109,9 @@ export const getGoogleLoginPage = async (req, res) => {
 };
 
 export const getGoogleLoginCallback = async (req, res) => {
-    console.log('reached callback function ')
+    // console.log('reached callback function ')
     const { code, state } = req.query;
-    console.log("Google callback received with code:", code, "and state:", state);
+    // console.log("Google callback received with code:", code, "and state:", state);
     // console.log(req.cookies)
     const cookieState = req.cookies.google_oauth_state;
     const codeVerifier = req.cookies.google_code_verifier;
@@ -126,7 +126,7 @@ export const getGoogleLoginCallback = async (req, res) => {
     let tokens;
     try {
         tokens = await google.validateAuthorizationCode(code, codeVerifier);
-        console.log("Tokens received:", tokens);
+        // console.log("Tokens received:", tokens);
 
 
     } catch (error) {
@@ -139,7 +139,7 @@ export const getGoogleLoginCallback = async (req, res) => {
     const claims = decodeIdToken(tokens.idToken());
     const { sub:googleUserId, email, name,picture } = claims;
 
-    console.log("Google user ID:", googleUserId, "Email:", email, "Name:", name, "picture",picture);
+    // console.log("Google user ID:", googleUserId, "Email:", email, "Name:", name, "picture",picture);
     let user = await User.findOne({ googleUserId });
     if (!user) {
         user = new User({
@@ -169,14 +169,14 @@ export const getGoogleLoginCallback = async (req, res) => {
 export const verifyToken = async (req,res)=>{
     try {
         const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
-        console.log("token from ",token)
+        // console.log("token from ",token)
         if (!token) {
             return res.status(401).json({ success: false, message: "Unauthorized No Token" });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id);
-        console.log(user)
+        // console.log(user)
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -203,7 +203,7 @@ export const getUser = async (req,res)=>{
     try {
   
        const user = await User.findById(req.userId).select("-password");
-       console.log(user)
+    //    console.log(user)
 
        if(!user){
         return res.status(404).json({message:"User not found",

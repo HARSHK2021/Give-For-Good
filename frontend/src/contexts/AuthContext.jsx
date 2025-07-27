@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
     console.log(response.data); // should show "Logout successful"
     setUser(null);
     localStorage.removeItem("token");
+    localStorage.removeItem("favorites");
 
   };
 

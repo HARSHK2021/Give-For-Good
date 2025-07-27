@@ -35,6 +35,10 @@ const ProductCard = ({ product }) => {
 
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
+    if (!user) {
+      toast.error('Please log in to add favorites');
+      return;
+    }
   
 
     if (isFavorite) {
@@ -81,7 +85,7 @@ const ProductCard = ({ product }) => {
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white bg-opacity-20 backdrop-blur-sm flex items-center justify-center hover:bg-opacity-30 transition-all"
         >
           <Heart
-            className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`}
+            className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500 scale-150 ' : 'text-white '}`}
           />
         </button>
 

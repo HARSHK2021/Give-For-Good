@@ -17,6 +17,18 @@ export const GFG_ROUTES ={
     ADDFAVORITES:`${host}/api/items/addToFavorites`,
     REMOVEFAVORITES:`${host}/api/items/removeFromFavorites`,
     GETFAVORITES:`${host}/api/items/getFavorites`,
+
+
+    //// 
+    GETUSERPROFILE: (id) => `${host}/api/user/profile/get/${id}`,
+    UPDATEUSERPROFILE: `${host}/api/user/profile/update`,
+    FOLLOWUSER: (id) => `${host}/api/user/profile/follow/${id}`,
+    UNFOLLOWUSER: (id) => `${host}/api/user/profile/unfollow/${id}`,
+
+
+    GETMYLISTINGS: (id) => `${host}/api/user/profile/mylistings/${id}`,
+    DELETEITEM: (id) => `${host}/api/items/deleteItem/${id}`,
+    
     
 
 }

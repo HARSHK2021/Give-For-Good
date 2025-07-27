@@ -1,6 +1,6 @@
 import express from "express";
 import protectUser from "../middleware/protectUser.js";
-import { addItem, getAllItems, getItemDetails, getItems,addToFavorites,removeFromFavorites,getFavorites  } from "../controllers/itemController.js";
+import { addItem, getAllItems, getItemDetails, getItems,addToFavorites,removeFromFavorites,getFavorites, deleteItem  } from "../controllers/itemController.js";
 import { upload } from "../utils/multer.js";
 
 
@@ -16,6 +16,8 @@ router.get("/getAllItems", getAllItems);
 router.post("/addToFavorites",protectUser,addToFavorites);
 router.post("/removeFromFavorites", protectUser, removeFromFavorites);
 router.get("/getFavorites", protectUser, getFavorites);
+
+router.delete("/deleteItem/:id", protectUser,deleteItem )
 
 
 

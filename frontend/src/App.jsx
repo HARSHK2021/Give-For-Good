@@ -19,6 +19,7 @@ import { SuccessStoriesProvider } from './contexts/SuccessStoriesContext';
 import Chatbot from './components/Chatbot';
 import Signup from './pages/Signup';
 import { ToastContainer } from 'react-toastify';
+import ViewOwnProduct from './pages/ViewOwnProduct';
 function App() {
   return (
     <AuthProvider>
@@ -38,6 +39,7 @@ function App() {
                       <Route path= "/signup" element={<Signup/>}/>
                       <Route path="/add-product" element={<AddProduct />} />
                       <Route path="/product/:id" element={<ProductDetails />} />
+                      <Route path="/profile/:userId/:id" element={<ViewOwnProduct />} />
                       <Route path="/favorites" element={<Favorites />} />
                       <Route path="/profile/:userId" element={<UserProfile />} />
                       <Route path="/profile" element={<UserProfile />} />
