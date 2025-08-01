@@ -20,7 +20,11 @@ import Chatbot from './components/Chatbot';
 import Signup from './pages/Signup';
 import { ToastContainer } from 'react-toastify';
 import ViewOwnProduct from './pages/ViewOwnProduct';
+import { io } from 'socket.io-client';
+import { SocketProvider } from './contexts/SocketContext';
 function App() {
+
+
   return (
     <AuthProvider>
       <LocationProvider>
@@ -28,6 +32,7 @@ function App() {
           <UserProfileProvider>
             <ChatbotProvider>
               <SuccessStoriesProvider>
+                <SocketProvider>
                       <ToastContainer />
                 <Router>
                   <div className="min-h-screen bg-slate-900 text-white">
@@ -49,6 +54,7 @@ function App() {
                     <Chatbot />
                   </div>
                 </Router>
+                </SocketProvider>
               </SuccessStoriesProvider>
             </ChatbotProvider>
           </UserProfileProvider>

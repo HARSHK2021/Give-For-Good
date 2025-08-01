@@ -313,9 +313,7 @@ export const deleteItem = async (req, res) => {
     if (!item) {
       return res.status(404).json({ success:false,message: "Item not found" });
     }
-    console.log("user id from item",item.postedBy._id);
-    console.log("userid",userId);
-
+    
 
     if (!item.postedBy._id.equals(userId)) {
       return res.status(403).json({success:false, message: "You can only delete your own items" });

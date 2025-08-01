@@ -107,8 +107,8 @@ export const unfollowUser = async (req, res) => {
 
 export const getItemsByUser = async (req, res) => {
   const { id } = req.params;
-  console.log("Fetching items for user ID:", id);
-  console.log(id);
+  // console.log("Fetching items for user ID:", id);
+  // console.log(id);
 
   try {
     const items = await Item.find({ postedBy: id })

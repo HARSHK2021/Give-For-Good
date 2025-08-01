@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./utils/connectDB.js";
@@ -8,11 +9,15 @@ import userRoutes from "./routes/userRoutes.js";
 import cookieParser from "cookie-parser";
 
 
+import { Server } from "socket.io";
+import { setupSocket } from "./socket/socket.js";
+
 
 dotenv.config();
 connectDB();
 
 const app = express();
+
 
 app.use(cors({
     origin: "http://localhost:5173",
@@ -26,5 +31,21 @@ app.use("/api/auth",authRoutes);
 app.use("/api/items",itemRoutes)
 app.use("/api/user/profile",userRoutes);
 
+
+/// socket.io setup
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        credentials: true,
+    },
+});
+setupSocket(io); // Uncomment this line to enable socket functionality
+
+
+
+
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

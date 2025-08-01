@@ -28,6 +28,8 @@ export const GFG_ROUTES ={
 
     GETMYLISTINGS: (id) => `${host}/api/user/profile/mylistings/${id}`,
     DELETEITEM: (id) => `${host}/api/items/deleteItem/${id}`,
+    SOCKET_URL: 'http://localhost:3000',
+    // Add more routes as needed
     
     
 

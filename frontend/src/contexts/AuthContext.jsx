@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     
     const verify = async () => {
       const token = localStorage.getItem('token');
-      console.log(token);
+      // console.log(token);
       try {
       
           // Send token in Authorization header as Bearer
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
               ? { Authorization: `Bearer ${token}` } // ✅ if token exists in localStorage, use it
               : {}, // otherwise rely on cookie
           });
-          console.log(response)
+          // console.log(response)
           if (response.data.success) {
             setUser(response.data.user);
             localStorage.setItem("token", response.data.token); // Store token in localStorage
