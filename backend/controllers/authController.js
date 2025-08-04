@@ -10,7 +10,7 @@ dotenv.config();
 const google = new Google(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  " https://give-for-good.onrender.com/api/auth/google/callback"
+  "https://give-for-good.onrender.com/api/auth/google/callback"
 );
 
 export const register = async (req, res) => {
