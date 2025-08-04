@@ -10,7 +10,7 @@ dotenv.config();
 const google = new Google(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  "http://localhost:3000/api/auth/google/callback"
+  " https://give-for-good.onrender.com/api/auth/google/callback"
 );
 
 export const register = async (req, res) => {
@@ -222,7 +222,7 @@ export const getUser = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "Succesfully fetched user", success: true, user });
+      .json({ message: "Successfully fetched user", success: true, user });
   } catch (error) {
     console.error("Error in getUser:", error);
     res.status(500).json({ message: "Server error" });
