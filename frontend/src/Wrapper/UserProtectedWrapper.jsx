@@ -1,38 +1,39 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { UserDataContext } from '../context/UserContext';
-import axios from 'axios';
-import { GFG_ROUTES } from '../gfgRoutes/gfgRoutes';
-const UserProtectedWrapper = ({children}) => {
+import { useAuth } from "../contexts/AuthContext";
+
+const UserProtectedWrapper = ({ children }) => {
     const token = localStorage.getItem("token");
+    const { user } = useAuth();
     const navigate = useNavigate();
-    const {user, setUser} = useContext(UserDataContext);
-    console.log(user);
     const [isLoading, setIsLoading] = useState(true);
-    useEffect(()=>{
-        if(!token){
-            navigate("/login");
-        }
-        axios.get(`${GFG_ROUTES.GETUSER}`,{
-            headers:{Authorization: `Bearer ${token}`}
-        }).then(response =>{
-            if(response.status === 200){
-                console.log(" response from procted user", response);
-                setUser(response.data);
-                setIsLoading(false)
-            }
-        }).catch(err=>{
-            console.error(err)
-            localStorage.removeItem("token");
-            navigate("/login");
-        })
-       
-    },[token])
-    if(isLoading){
-         return ( <div> Loading....</div>)
+
+    useEffect(() => {
+        setIsLoading(false); // No async fetch assumed here
+    }, []);
+
+    if (isLoading) {
+        return <div className="text-white text-center p-10">Loading...</div>;
     }
- return <>{children}</>;
 
-}
+    if (!token || !user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-900">
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold text-white mb-4">Login Required</h2>
+                    <p className="text-gray-400 mb-6">Please login to access all features</p>
+                    <button
+                        onClick={() => navigate('/login')}
+                        className="bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
-export default UserProtectedWrapper
+    return <>{children}</>;
+};
+
+export default UserProtectedWrapper;

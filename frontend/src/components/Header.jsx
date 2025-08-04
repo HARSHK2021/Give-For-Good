@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, MapPin, MessageCircle, Heart, User, Plus, ChevronDown, Navigation, Trophy, Award } from 'lucide-react';
+import { Search, MapPin, MessageCircle, Heart, User, Plus, ChevronDown, Navigation, Trophy, Award, Bell, HeartHandshake } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocation as useLocationContext } from '../contexts/LocationContext';
 import { useFavorites } from '../contexts/FavoritesContext';
@@ -14,6 +14,7 @@ const Header = () => {
   const { userStats } = useUserProfile();
   const navigate = useNavigate();
   const currentPath = useLocation();
+const unreadCount = 5;
   
 
 
@@ -23,7 +24,8 @@ const Header = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-bold text-teal-400">
+          <Link to="/" className="text-2xl font-bold text-teal-400 flex items-center gap-2">
+        <HeartHandshake className='h-8 w-8 text-yellow-400'/>
             Giive for Good
           </Link>
 
@@ -35,14 +37,29 @@ const Header = () => {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
             {/* Mobile Search */}
-            <button className="md:hidden">
-              <Search className="w-6 h-6" />
-            </button>
+            <Link to ="/"  className="hover:text-teal-400 transition-colors">
+               <Search className="w-6 h-6 font-bold" />
+            </Link>
+           
+           
 
             {/* Chat */}
             <Link to="/chat" className="hover:text-teal-400 transition-colors">
               <MessageCircle className="w-6 h-6" />
             </Link>
+            {/* notification */}
+                    <Link 
+              to="/notifications" 
+              className="hover:text-teal-400 transition-colors relative"
+            >
+              <Bell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </Link>
+
 
             {/* Favorites */}
             <Link 
@@ -57,14 +74,7 @@ const Header = () => {
               )}
             </Link>
 
-            {/* Success Stories */}
-            <Link 
-              to="/success-stories" 
-              className="hover:text-teal-400 transition-colors hidden md:block"
-              title="Success Stories"
-            >
-              <Award className="w-6 h-6" />
-            </Link>
+            
 
             {/* Leaderboard */}
             <Link 
@@ -105,13 +115,7 @@ const Header = () => {
                       >
                         My Profile
                       </Link>
-                      <Link
-                        to="/success-stories"
-                        onClick={() => setShowUserMenu(false)}
-                        className="block px-4 py-2 text-sm hover:bg-slate-600 transition-colors md:hidden"
-                      >
-                        Success Stories
-                      </Link>
+                     
                       <Link
                         to="/leaderboard"
                         onClick={() => setShowUserMenu(false)}

@@ -13,210 +13,223 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-
-
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { GFG_ROUTES } from "../gfgRoutes/gfgRoutes";
 
 const Chat = () => {
   const socket = useSocket();
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [conversations, setConversations] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
   const [editingMessage, setEditingMessage] = useState(null);
   const [editText, setEditText] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showChatOptions, setShowChatOptions] = useState(null);
+
   const messagesEndRef = useRef(null);
-  const { user } = useAuth();
 
- 
-
-
-  useEffect(() => {
-    // Load conversations from localStorage or use mock data
-    console.log("hello");
-    console.log("Socket ID from chat:", socket?.id); // Log the socket ID for debugging
-    socket.emit("welcome", (message) => {
-      console.log(message); // Log the welcome message
-    });
-    
-    const savedConversations = localStorage.getItem("conversations");
-
-    if (savedConversations) {
-      setConversations(JSON.parse(savedConversations));
-    } else {
-      const mockConversations = [
-        {
-          id: "1",
-          user: {
-            name: "John Doe",
-            avatar:
-              "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?w=100",
-            lastSeen: "2 min ago",
-          },
-          lastMessage: "Is this still available?",
-          timestamp: "2:30 PM",
-          unread: 2,
-          product: { title: "iPhone 13 Pro Max", price: "₹85,000" },
-        },
-        {
-          id: "2",
-          user: {
-            name: "Sarah Smith",
-            avatar:
-              "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?w=100",
-            lastSeen: "1 hour ago",
-          },
-          lastMessage: "Can we meet tomorrow?",
-          timestamp: "1:15 PM",
-          unread: 0,
-          product: { title: "Honda City 2020", price: "₹12,50,000" },
-        },
-        {
-          id: "3",
-          user: {
-            name: "Mike Johnson",
-            avatar:
-              "https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?w=100",
-            lastSeen: "3 hours ago",
-          },
-          lastMessage: "Thanks for the quick response!",
-          timestamp: "11:45 AM",
-          unread: 0,
-          product: { title: "Gaming Laptop", price: "₹75,000" },
-        },
-      ];
-      setConversations(mockConversations);
-      localStorage.setItem("conversations", JSON.stringify(mockConversations));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedChat) {
-      // Load messages for selected chat
-      const savedMessages = localStorage.getItem(`messages_${selectedChat.id}`);
-      if (savedMessages) {
-        setMessages(JSON.parse(savedMessages));
-      } else {
-        const mockMessages = [
-          {
-            id: "1",
-            sender: "other",
-            content: "Hi! Is this product still available?",
-            timestamp: "2:25 PM",
-            edited: false,
-          },
-          {
-            id: "2",
-            sender: "me",
-            content: "Yes, it's available. Are you interested?",
-            timestamp: "2:26 PM",
-            edited: false,
-          },
-          {
-            id: "3",
-            sender: "other",
-            content: "Great! Can you tell me more about the condition?",
-            timestamp: "2:27 PM",
-            edited: false,
-          },
-          {
-            id: "4",
-            sender: "me",
-            content:
-              "It's in excellent condition. Barely used, all accessories included.",
-            timestamp: "2:28 PM",
-            edited: false,
-          },
-          {
-            id: "5",
-            sender: "other",
-            content: "Perfect! Can we meet to see it?",
-            timestamp: "2:30 PM",
-            edited: false,
-          },
-        ];
-        setMessages(mockMessages);
-        localStorage.setItem(
-          `messages_${selectedChat.id}`,
-          JSON.stringify(mockMessages)
-        );
-      }
-    }
-  }, [selectedChat]);
-
+  // Scroll chat to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const saveMessages = (updatedMessages) => {
-    setMessages(updatedMessages);
-    if (selectedChat) {
-      localStorage.setItem(
-        `messages_${selectedChat.id}`,
-        JSON.stringify(updatedMessages)
-      );
-    }
-  };
+  // Load conversations on login
+  useEffect(() => {
+    if (!user) return;
 
-  const saveConversations = (updatedConversations) => {
-    setConversations(updatedConversations);
-    localStorage.setItem("conversations", JSON.stringify(updatedConversations));
-  };
+    const fetchConvos = async () => {
+      try {
+        const res = await axios.get(GFG_ROUTES.GETUSERCONVERSATIONS(user._id));
+        setConversations(res.data);
+      } catch (err) {
+        console.error("Failed to fetch conversations", err);
+      }
+    };
+    fetchConvos();
+  }, [user]);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: Date.now().toString(),
-        sender: "me",
-        content: message,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        edited: false,
+  // Handle URL params to auto-open/create conversation
+  useEffect(() => {
+    if (!user || !socket) return;
+
+    const params = new URLSearchParams(location.search);
+    const productId = params.get("productId");
+    const sellerId = params.get("sellerId");
+    const productTitle = params.get("productTitle");
+
+    if (productId && sellerId) {
+      const createOrFetch = async () => {
+        try {
+          const { data } = await axios.post(GFG_ROUTES.GETCONVERSATION, {
+            participantIds: [user._id, sellerId],
+            product: { _id: productId, title: productTitle },
+          });
+
+          if (data.success && data.conversation) {
+            // Update conversation list, avoiding duplicates
+            setConversations((prev) => {
+              if (prev.some((c) => c._id === data.conversation._id)) return prev;
+              return [data.conversation, ...prev];
+            });
+            setSelectedChat(data.conversation);
+          }
+
+          // Clean URL query params
+          navigate("/chat", { replace: true });
+        } catch (err) {
+          console.error("Failed to create or fetch conversation", err);
+        }
       };
-
-      const updatedMessages = [...messages, newMessage];
-      saveMessages(updatedMessages);
-
-      // Update conversation's last message
-      const updatedConversations = conversations.map((conv) =>
-        conv.id === selectedChat.id
-          ? { ...conv, lastMessage: message, timestamp: newMessage.timestamp }
-          : conv
-      );
-      saveConversations(updatedConversations);
-
-      setMessage("");
+      createOrFetch();
     }
+  }, [location.search, user, socket, navigate]);
+
+  // Load messages when selected chat changes
+  useEffect(() => {
+    if (!selectedChat || !user || !socket) return;
+
+    const fetchMessages = async () => {
+      try {
+        const res = await axios.get(GFG_ROUTES.GETMESSAGES(selectedChat._id));
+        const mapped = res.data
+          .map((msg) => ({
+            id: msg._id,
+            sender: msg.sender?._id === user._id ? "me" : "other",
+            content: msg.content,
+            timestamp: new Date(msg.timestamp ?? msg.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            edited: msg.edited,
+            readBy: msg.readBy ? msg.readBy.map((id) => id.toString()) : [],
+            senderInfo: msg.sender,
+          }))
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // optional, just to be safe
+
+        setMessages(mapped);
+
+        // Join socket room for realtime updates
+        socket.emit("join_conversation", selectedChat._id);
+
+        // Emit mark as read for all loaded messages to update backend
+        socket.emit("mark_as_read", { conversationId: selectedChat._id });
+      } catch (err) {
+        console.error("Failed to fetch messages", err);
+      }
+    };
+    fetchMessages();
+  }, [selectedChat, user, socket]);
+
+  // Listen for socket events
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const onNewMessage = (msg) => {
+      if (!selectedChat || selectedChat._id !== msg.conversation) return;
+
+      // Avoid duplicates
+      setMessages((old) => {
+        if (old.find((m) => m.id === msg._id)) return old;
+        return [
+          ...old,
+          {
+            id: msg._id,
+            sender: msg.sender._id === user._id ? "me" : "other",
+            content: msg.content,
+            timestamp: new Date(msg.timestamp ?? msg.createdAt).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            edited: msg.edited,
+            readBy: [], // new message is unread by recipient initially
+            senderInfo: msg.sender,
+          },
+        ];
+      });
+
+      setConversations((old) =>
+        old.map((c) =>
+          c._id === msg.conversation
+            ? { ...c, lastMessage: msg.content, updatedAt: new Date() }
+            : c
+        )
+      );
+    };
+
+    const onEditedMessage = (msg) => {
+      if (!selectedChat || selectedChat._id !== msg.conversation) return;
+      setMessages((old) =>
+        old.map((m) => (m.id === msg._id ? { ...m, content: msg.content, edited: true } : m))
+      );
+    };
+
+    const onDeletedMessage = ({ messageId }) => {
+      setMessages((old) => old.filter((m) => m.id !== messageId));
+    };
+
+    // Handle read receipts update
+    const onMessagesRead = ({ conversationId, readerId }) => {
+      if (!selectedChat || selectedChat._id !== conversationId) return;
+      setMessages((old) =>
+        old.map((m) => {
+          // If already read by user, no change
+          if (m.readBy.includes(readerId)) return m;
+
+          // Only messages sent before this event should be updated (optional)
+          // For simplicity, update all messages not sent by reader and not already marked read by reader
+          if (readerId !== user._id) {
+            return { ...m, readBy: [...(m.readBy || []), readerId] };
+          }
+          return m;
+        })
+      );
+    };
+
+    socket.on("receive_message", onNewMessage);
+    socket.on("message_edited", onEditedMessage);
+    socket.on("message_deleted", onDeletedMessage);
+    socket.on("messages_read", onMessagesRead);
+
+    return () => {
+      socket.off("receive_message", onNewMessage);
+      socket.off("message_edited", onEditedMessage);
+      socket.off("message_deleted", onDeletedMessage);
+      socket.off("messages_read", onMessagesRead);
+    };
+  }, [selectedChat, user, socket]);
+
+  // Send a message
+  const handleSend = () => {
+    if (!message.trim() || !selectedChat || !user || !socket) return;
+
+    const receiverId = selectedChat.participants?.find((p) => p._id !== user._id)?._id || "";
+
+    socket.emit("send_message", {
+      to: receiverId,
+      conversationId: selectedChat._id,
+      text: message.trim(),
+    });
+
+    setMessage("");
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSend();
     }
   };
 
-  const handleDeleteMessage = (messageId) => {
-    const updatedMessages = messages.filter((msg) => msg.id !== messageId);
-    saveMessages(updatedMessages);
-    setShowDeleteConfirm(null);
-  };
-
-  const handleEditMessage = (messageId, newContent) => {
-    const updatedMessages = messages.map((msg) =>
-      msg.id === messageId ? { ...msg, content: newContent, edited: true } : msg
-    );
-    saveMessages(updatedMessages);
-    setEditingMessage(null);
-    setEditText("");
-  };
-
-  const startEditMessage = (message) => {
-    setEditingMessage(message.id);
-    setEditText(message.content);
+  // Editing message
+  const startEdit = (msg) => {
+    setEditingMessage(msg.id);
+    setEditText(msg.content);
   };
 
   const cancelEdit = () => {
@@ -224,31 +237,63 @@ const Chat = () => {
     setEditText("");
   };
 
-  const handleDeleteChat = (chatId) => {
-    const updatedConversations = conversations.filter(
-      (conv) => conv.id !== chatId
-    );
-    saveConversations(updatedConversations);
+  const confirmEdit = () => {
+    if (!editText.trim() || !editingMessage || !socket) return;
 
-    // Remove messages for this chat
-    localStorage.removeItem(`messages_${chatId}`);
+    socket.emit("edit_message", {
+      messageId: editingMessage,
+      newText: editText.trim(),
+      conversationId: selectedChat._id,
+    });
+    setEditingMessage(null);
+    setEditText("");
+  };
 
-    // If currently viewing this chat, clear selection
-    if (selectedChat && selectedChat.id === chatId) {
-      setSelectedChat(null);
-      setMessages([]);
+  // Delete message
+  const deleteMessage = (id) => {
+    if (!selectedChat || !socket) return;
+    socket.emit("delete_message", { messageId: id, conversationId: selectedChat._id });
+    // Optimistically update UI
+    setMessages((old) => old.filter((m) => m.id !== id));
+    setShowDeleteConfirm(null);
+  };
+
+  // Delete conversation
+  const deleteConversation = async (id) => {
+    try {
+      await axios.delete(GFG_ROUTES.DELETECONVERSATION(id));
+      setConversations((old) => old.filter((c) => c._id !== id));
+      if (selectedChat?._id === id) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setShowChatOptions(null);
+    } catch (err) {
+      console.error("Failed to delete conversation", err);
     }
-
-    setShowChatOptions(null);
   };
 
-  const formatTime = (timestamp) => {
-    return timestamp;
+  // On chat open or switch, mark current conversation as read (for read receipts)
+  useEffect(() => {
+    if (socket && user && selectedChat) {
+      socket.emit("mark_as_read", { conversationId: selectedChat._id });
+    }
+  }, [selectedChat, socket, user]);
+
+  // Format time helper
+  const formatTime = (time) => time;
+
+  // Helper to determine if current user has seen a message
+  const hasRead = (msg) => {
+    if (!msg.readBy) return false;
+    return msg.readBy.includes(selectedChat.participants.find((p) => p._id !== user._id)?._id);
   };
+
+  // Render
 
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
-      {/* Conversations List */}
+      {/* Conversations Sidebar */}
       <div
         className={`${
           selectedChat ? "hidden md:flex" : "flex"
@@ -258,7 +303,7 @@ const Chat = () => {
         <div className="p-4 border-b border-slate-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Messages</h2>
-            <button className="text-gray-400 hover:text-white">
+            <button className="text-gray-400 hover:text-white" title="More options">
               <MoreVertical className="w-5 h-5" />
             </button>
           </div>
@@ -268,323 +313,275 @@ const Chat = () => {
               type="text"
               placeholder="Search conversations..."
               className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-white"
+              // TODO: implement search filter functionality here
+              // onChange={...}
             />
           </div>
         </div>
 
-        {/* Conversations */}
+        {/* Conversations List */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          {conversations.map((conversation) => (
-            <div
-              key={conversation.id}
-              className={`relative group p-3 sm:p-4 border-b border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors ${
-                selectedChat?.id === conversation.id ? "bg-slate-700" : ""
-              }`}
-            >
+          {conversations.map((conv) => {
+            const otherUser = conv.participants?.find((p) => p._id !== user._id) || {};
+            // Optionally: compute number of unread messages per conv here as well
+            return (
               <div
-                onClick={() => setSelectedChat(conversation)}
-                className="flex items-center space-x-2 sm:space-x-3 min-w-0"
+                key={conv._id}
+                className={`relative group p-3 sm:p-4 border-b border-slate-700 cursor-pointer hover:bg-slate-700 transition-colors ${
+                  selectedChat?._id === conv._id ? "bg-slate-700" : ""
+                }`}
+                onClick={() => setSelectedChat(conv)}
               >
-                <div className="relative">
-                  <img
-                    src={conversation.user.avatar}
-                    alt={conversation.user.name}
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
-                  />
-                  {conversation.unread > 0 && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-teal-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">
-                        {conversation.unread}
+                <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                  <div className="relative">
+                    <img
+                      src={otherUser.avatar || ""}
+                      alt={otherUser.name || "User"}
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-medium text-white truncate text-sm sm:text-base">
+                        {otherUser.name || "Unknown"}
+                      </h3>
+                      <span className="text-xs text-gray-400 flex-shrink-0">
+                        {new Date(conv.updatedAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium text-white truncate text-sm sm:text-base pr-2">
-                      {conversation.user.name}
-                    </h3>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {conversation.timestamp}
-                    </span>
+                    <p className="text-xs sm:text-sm text-gray-400 truncate">
+                      {conv.lastMessage || ""}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate mt-1">
+                      About: {conv.product?.title || ""}
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-400 truncate">
-                    {conversation.lastMessage}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate mt-1">
-                    About: {conversation.product.title}
-                  </p>
-                </div>
-              </div>
 
-              {/* Chat Options */}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <div className="relative">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowChatOptions(
-                        showChatOptions === conversation.id
-                          ? null
-                          : conversation.id
-                      );
-                    }}
-                    className="p-1 hover:bg-slate-600 rounded"
-                  >
-                    <MoreVertical className="w-4 h-4 text-gray-400" />
-                  </button>
-
-                  {showChatOptions === conversation.id && (
-                    <div className="absolute top-full right-0 mt-1 bg-slate-600 rounded-lg shadow-xl w-32 z-20">
+                  {/* Conversation Options */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div className="relative">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteChat(conversation.id);
+                          setShowChatOptions(showChatOptions === conv._id ? null : conv._id);
                         }}
-                        className="block w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-slate-500 rounded-lg"
+                        className="p-1 hover:bg-slate-600 rounded"
+                        title="Chat options"
                       >
-                        Delete Chat
+                        <MoreVertical className="w-5 h-5 text-gray-400" />
                       </button>
+                      {showChatOptions === conv._id && (
+                        <div className="absolute top-full right-0 mt-1 bg-slate-600 rounded-lg shadow-xl w-32 z-20">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteConversation(conv._id);
+                            }}
+                            className="block w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-slate-500 rounded-lg"
+                          >
+                            Delete Chat
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Chat window */}
       <div
         className={`${
           selectedChat ? "flex" : "hidden md:flex"
-        } flex-col flex-1 min-w-0 overflow-hidden`}
+        } flex-col w-full flex-grow bg-slate-900`}
       >
         {selectedChat ? (
           <>
             {/* Chat Header */}
             <div className="p-3 sm:p-4 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
-              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
                 <button
-                  onClick={() => setSelectedChat(null)}
-                  className="md:hidden text-gray-400 hover:text-white"
+                  onClick={() => navigate(-1)}
+                  className="text-gray-400 hover:text-white"
+                  title="Back"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <img
-                  src={selectedChat.user.avatar}
-                  alt={selectedChat.user.name}
+                  src={selectedChat.participants?.find((p) => p._id !== user._id)?.avatar || ""}
+                  alt={selectedChat.participants?.find((p) => p._id !== user._id)?.name || ""}
                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover flex-shrink-0"
+                  referrerPolicy="no-referrer"
                 />
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-white truncate text-sm sm:text-base">
-                    {selectedChat.user.name}
+                <div className="min-w-0">
+                  <h3 className="font-medium text-white truncate text-base">
+                    {selectedChat.participants?.find((p) => p._id !== user._id)?.name || ""}
                   </h3>
-                  <p className="text-xs text-gray-400 truncate">
-                    Last seen {selectedChat.user.lastSeen}
-                  </p>
+                  <p className="text-xs text-gray-400 truncate">Last seen</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                <button className="text-gray-400 hover:text-white p-1 sm:p-2 rounded-full hover:bg-slate-700">
+              <div className="flex items-center space-x-2">
+                <button className="text-gray-400 hover:text-white p-1 rounded-full" title="Call">
                   <Phone className="w-5 h-5" />
                 </button>
-                <button className="text-gray-400 hover:text-white p-1 sm:p-2 rounded-full hover:bg-slate-700">
+                <button className="text-gray-400 hover:text-white p-1 rounded-full" title="Video call">
                   <Video className="w-5 h-5" />
                 </button>
-                <button className="text-gray-400 hover:text-white p-1 sm:p-2 rounded-full hover:bg-slate-700">
+                <button className="text-gray-400 hover:text-white p-1 rounded-full" title="Options">
                   <MoreVertical className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Product Info */}
-            <div className="p-3 bg-slate-700 border-b border-slate-600">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">📱</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-medium text-white text-sm truncate">
-                    {selectedChat.product.title}
-                  </h4>
-                  <p className="text-teal-400 text-sm font-medium">
-                    {selectedChat.product.price}
-                  </p>
-                </div>
+            {/* Product info */}
+            <div className="p-3 bg-slate-700 border-b border-slate-600 flex items-center space-x-2">
+              <div className="w-12 h-12 bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl">📱</span>
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-white font-semibold text-lg truncate">
+                  {selectedChat.product?.title || ""}
+                </h4>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 space-y-3 sm:space-y-4">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex group ${
-                    msg.sender === "me" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[75%] sm:max-w-xs lg:max-w-md relative ${
-                      msg.sender === "me" ? "order-2" : "order-1"
-                    }`}
-                  >
-                    {editingMessage === msg.id ? (
-                      <div className="bg-slate-700 p-3 rounded-lg">
-                        <textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="w-full bg-slate-600 text-white p-2 rounded resize-none focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
-                          rows="2"
-                        />
-                        <div className="flex justify-end space-x-2 mt-2">
-                          <button
-                            onClick={cancelEdit}
-                            className="p-1 text-gray-400 hover:text-white"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEditMessage(msg.id, editText)}
-                            className="p-1 text-teal-400 hover:text-teal-300"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={`px-4 py-2 rounded-lg ${
-                          msg.sender === "me"
-                            ? "bg-teal-500 text-white"
-                            : "bg-slate-700 text-gray-100"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-line break-words">
-                          {msg.content}
-                        </p>
-                        <div className="flex items-center justify-between mt-1">
-                          <p
-                            className={`text-xs ${
-                              msg.sender === "me"
-                                ? "text-teal-100"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {formatTime(msg.timestamp)}
-                            {msg.edited && (
-                              <span className="ml-1">(edited)</span>
+            <div className="flex-grow overflow-y-auto p-4 space-y-3">
+              {messages.map((msg) => {
+                const isMe = msg.sender === "me";
+                const otherUser = selectedChat.participants.find((p) => p._id !== user._id) || {};
+                const isReadByOther = msg.readBy?.includes(otherUser._id);
+                const allRead = msg.readBy?.length === selectedChat.participants.length;
+
+                return (
+                  <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"} relative`}>
+                    <div className={`max-w-[70%] rounded-xl px-4 py-2 ${isMe ? "bg-teal-500 text-white" : "bg-slate-700 text-gray-100"} relative`}>
+                      {editingMessage === msg.id ? (
+                        <>
+                          <textarea
+                            className="bg-slate-600 text-white rounded w-full resize-none p-2"
+                            rows={2}
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                          />
+                          <div className="flex justify-end space-x-2 mt-1">
+                            <button onClick={cancelEdit} title="Cancel" className="text-gray-300 hover:text-white">
+                              <X />
+                            </button>
+                            <button onClick={confirmEdit} title="Save" className="text-teal-300 hover:text-white">
+                              <Check />
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                          <div className="flex justify-between text-xs mt-1 text-gray-300">
+                            <span>{msg.timestamp}{msg.edited ? " (edited)" : ""}</span>
+                            {/* Read receipt ticks */}
+                            {isMe && (
+                              <span
+                                title={
+                                  allRead
+                                    ? "Seen"
+                                    : isReadByOther
+                                    ? "Delivered"
+                                    : "Sent"
+                                }
+                                className={`ml-2 inline-block w-4 h-4 relative`}>
+                                {/* One tick */}
+                                <svg
+                                  className={`absolute left-0 top-0 w-4 h-4 stroke-current ${isReadByOther ? "text-blue-500" : "text-gray-400"}`}
+                                  fill="none"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  viewBox="0 0 24 24"
+                                
+                                >
+                                  <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                                {/* Second tick */}
+                                <svg
+                                  className={`absolute left-1 top-0 w-4 h-4 stroke-current ${allRead ? "text-blue-500" : isReadByOther ? "text-blue-500" : "text-gray-400"}`}
+                                  fill="none"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                              </span>
                             )}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Message Options */}
-                    {/* Message Options */}
-                    {msg.sender === "me" && editingMessage !== msg.id && (
-                      <div className="absolute top-1 right-2 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block z-20">
-                        <div className="flex space-x-1 ml-2">
-                          <button
-                            onClick={() => startEditMessage(msg)}
-                            className="p-1 text-gray-400 hover:text-white bg-slate-600 rounded"
-                            title="Edit message"
-                          >
-                            <Edit3 className="w-3 h-3" />
+                          </div>
+                        </>
+                      )}
+                      {/* Message actions */}
+                      {isMe && editingMessage !== msg.id && (
+                        <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 flex space-x-1">
+                          <button onClick={() => startEdit(msg)} title="Edit" className="text-gray-300 hover:text-white">
+                            <Edit3 size={16} />
                           </button>
-                          <button
-                            onClick={() => setShowDeleteConfirm(msg.id)}
-                            className="p-1 text-gray-400 hover:text-red-400 bg-slate-600 rounded"
-                            title="Delete message"
-                          >
-                            <Trash2 className="w-3 h-3" />
+                          <button onClick={() => setShowDeleteConfirm(msg.id)} title="Delete" className="text-red-500 hover:text-red-700">
+                            <Trash2 size={16} />
                           </button>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Mobile Message Options */}
-                    {msg.sender === "me" && editingMessage !== msg.id && (
-                      <div className="sm:hidden mt-2 flex justify-end space-x-2">
-                        <button
-                          onClick={() => startEditMessage(msg)}
-                          className="p-1 text-gray-400 hover:text-white bg-slate-600 rounded text-xs"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => setShowDeleteConfirm(msg.id)}
-                          className="p-1 text-gray-400 hover:text-red-400 bg-slate-600 rounded text-xs"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className="p-3 sm:p-4 bg-slate-800 border-t border-slate-700">
-              <div className="flex items-end space-x-2">
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="flex-1 px-3 sm:px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-white text-sm sm:text-base"
-                  rows="1"
-                  style={{ minHeight: "40px", maxHeight: "120px" }}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="bg-teal-500 hover:bg-teal-600 p-2 rounded-lg transition-colors flex-shrink-0"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
-              </div>
+            {/* Message input */}
+            <div className="p-3 border-t border-slate-700 bg-slate-800 flex items-center space-x-3">
+              <textarea
+                className="flex-grow resize-none rounded bg-slate-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                rows={1}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message..."
+              />
+              <button onClick={handleSend} title="Send" className="p-2 rounded bg-teal-500 hover:bg-teal-600 text-white">
+                <Send size={20} />
+              </button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 sm:w-24 sm:h-24 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">💬</span>
-              </div>
-              <h3 className="text-lg sm:text-xl font-medium text-white mb-2 px-4">
-                Select a chat to view conversation
-              </h3>
-              <p className="text-gray-400 px-4 text-sm sm:text-base">
-                Choose a conversation from the list to start chatting
-              </p>
+          <div className="flex-grow flex items-center justify-center text-gray-500 text-center px-8">
+            <div>
+              <p>Please select a chat on the left to start messaging.</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete confirmation modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Delete Message
-            </h3>
-            <p className="text-gray-300 mb-6 text-sm sm:text-base">
-              Are you sure you want to delete this message? This action cannot
-              be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-6 rounded-lg w-80 max-w-full">
+            <h2 className="text-lg font-semibold mb-4 text-white">Delete Message</h2>
+            <p className="mb-6 text-gray-300">Are you sure you want to delete this message? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowDeleteConfirm(null)}
-                className="px-3 sm:px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg transition-colors text-sm sm:text-base"
+                className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-700 text-white"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleDeleteMessage(showDeleteConfirm)}
-                className="px-3 sm:px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors text-sm sm:text-base"
+                onClick={() => deleteMessage(showDeleteConfirm)}
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
               >
                 Delete
               </button>

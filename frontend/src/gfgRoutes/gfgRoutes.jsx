@@ -30,6 +30,10 @@ export const GFG_ROUTES ={
     DELETEITEM: (id) => `${host}/api/items/deleteItem/${id}`,
     SOCKET_URL: 'http://localhost:3000',
     // Add more routes as needed
+    GETMESSAGES: (conversationId) => `${host}/api/messages/${conversationId}`,
+    GETUSERCONVERSATIONS:(id) => `${host}/api/conversations/get/${id}`,
+    GETCONVERSATION:`${host}/api/conversations/getConversation`,
+    DELETECONVERSATION: (conversationId) => `${host}/api/conversations/delete/${conversationId}`,
     
     
 

@@ -7,12 +7,15 @@ import authRoutes from "./routes/authRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js"
 import userRoutes from "./routes/userRoutes.js";
 import cookieParser from "cookie-parser";
-
-
+import messageRoutes from "./routes/messageRoutes.js";
+import { createClient } from 'redis';
+import { createAdapter } from '@socket.io/redis-adapter';
 import { Server } from "socket.io";
 import { setupSocket } from "./socket/socket.js";
 
+import conversationRoutes from "./routes/conversationRoutes.js";
 
+const PORT = process.env.PORT || 3000;
 dotenv.config();
 connectDB();
 
@@ -20,7 +23,7 @@ const app = express();
 
 
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true,
 }
 ));
@@ -31,6 +34,10 @@ app.use("/api/auth",authRoutes);
 app.use("/api/items",itemRoutes)
 app.use("/api/user/profile",userRoutes);
 
+app.use("/api/conversations",conversationRoutes);
+app.use("/api/messages",messageRoutes);
+
+
 
 /// socket.io setup
 const server = http.createServer(app);
@@ -40,12 +47,20 @@ const io = new Server(server, {
         credentials: true,
     },
 });
-setupSocket(io); // Uncomment this line to enable socket functionality
+const pubClient = createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+pubClient.on('error', (err) => console.error('Redis Pub Client Error', err));
+
+
+const subClient = pubClient.duplicate();
 
 
 
+(async () => {
+  await pubClient.connect();
+  await subClient.connect();
+    console.log('Connected to Redis');
+  io.adapter(createAdapter(pubClient, subClient));
+  setupSocket(io);
 
-
-const PORT = process.env.PORT || 5000;
-
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+})();

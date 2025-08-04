@@ -35,7 +35,7 @@ export const SocketProvider = ({ children }) => {
     newSocket.on('disconnect', () => {
       console.log('Disconnected from socket.io server');
     });
-    newSocket.emit('welcome', (message) => {
+    newSocket.on('welcome', (message) => {
       console.log(message); // Log the welcome message
     });
 

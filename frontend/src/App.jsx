@@ -22,12 +22,18 @@ import { ToastContainer } from 'react-toastify';
 import ViewOwnProduct from './pages/ViewOwnProduct';
 import { io } from 'socket.io-client';
 import { SocketProvider } from './contexts/SocketContext';
+import UserProtectedWrapper from './Wrapper/UserProtectedWrapper';
+import Notifications from './pages/Notifications';
+import { NotificationProvider } from './contexts/NotificationContext';
+import CommunityRules from './components/CommunityRules';
+
 function App() {
 
 
   return (
     <AuthProvider>
       <LocationProvider>
+            <NotificationProvider>
         <FavoritesProvider>
           <UserProfileProvider>
             <ChatbotProvider>
@@ -39,7 +45,7 @@ function App() {
                     <Header />
                     <Routes>
                       <Route path="/" element={<Home />} />
-                      <Route path="/chat" element={<Chat />} />
+                      <Route path="/chat" element={ <UserProtectedWrapper> <Chat /></UserProtectedWrapper>} />
                       <Route path="/login" element={<Login />} />
                       <Route path= "/signup" element={<Signup/>}/>
                       <Route path="/add-product" element={<AddProduct />} />
@@ -50,6 +56,9 @@ function App() {
                       <Route path="/profile" element={<UserProfile />} />
                       <Route path="/success-stories" element={<SuccessStories />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
+                      <Route path="/notifications" element={<Notifications />}/>
+                      <Route path="/community-rules" element={<CommunityRules />} />
+
                     </Routes>
                     <Chatbot />
                   </div>
@@ -59,6 +68,7 @@ function App() {
             </ChatbotProvider>
           </UserProfileProvider>
         </FavoritesProvider>
+        </NotificationProvider>
       </LocationProvider>
     </AuthProvider>
   );

@@ -107,9 +107,7 @@ const ProductCard = ({ product }) => {
       {/* Content */}
       <div className="p-4">
         {/* Price */}
-        <div className="text-xl font-bold text-white mb-2">
-          {product.price || 'Free'}
-        </div>
+      
 
         {/* Title */}
         <h3 className="text-gray-100 font-medium mb-2 line-clamp-2">
@@ -142,15 +140,7 @@ const ProductCard = ({ product }) => {
 
         {/* Seller Info */}
         <div className="mt-3 pt-3 border-t border-slate-700">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleAvatarClick}
-              className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center hover:bg-slate-500 transition-colors"
-            >
-              <User className="w-3 h-3 text-gray-300" />
-            </button>
-            <span className="text-xs text-gray-400">View seller profile</span>
-          </div>
+       
         </div>
       </div>
     </div>

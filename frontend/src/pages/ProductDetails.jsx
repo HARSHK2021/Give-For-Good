@@ -1,36 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Heart, 
-  MapPin, 
-  Clock, 
-  User, 
-  MessageCircle, 
-  ArrowLeft, 
-  ChevronLeft, 
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Heart,
+  MapPin,
+  Clock,
+  User,
+  MessageCircle,
+  ArrowLeft,
+  ChevronLeft,
   ChevronRight,
   Share2,
-  Flag
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useFavorites } from '../contexts/FavoritesContext';
-import { useUserProfile } from '../contexts/UserProfileContext';
-import { GFG_ROUTES } from '../gfgRoutes/gfgRoutes';
-import axios from 'axios';
+  Flag,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useFavorites } from "../contexts/FavoritesContext";
+import { useUserProfile } from "../contexts/UserProfileContext";
+import { GFG_ROUTES } from "../gfgRoutes/gfgRoutes";
+import axios from "axios";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { favorites, addToFavorites, removeFromFavorites } = useFavorites();
-  const { followSeller, unfollowSeller, isFollowing, addPoints } = useUserProfile();
-  
+  const { followSeller, unfollowSeller, isFollowing, addPoints } =
+    useUserProfile();
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [seller, setSeller] = useState(null);
 
-  const isFavorite = product && favorites.some(fav => fav._id === product._id);
+  const isFavorite =
+    product && favorites.some((fav) => fav._id === product._id);
 
   useEffect(() => {
     fetchProductDetails();
@@ -39,17 +41,17 @@ const ProductDetails = () => {
   const fetchProductDetails = async () => {
     setLoading(true);
     try {
-     const response = await axios.get(`${GFG_ROUTES.GETITEMDETAILS(id)}`);
+      const response = await axios.get(`${GFG_ROUTES.GETITEMDETAILS(id)}`);
       if (response.data.success) {
         setProduct(response.data.item);
         setSeller(response.data.item.postedBy);
         setCurrentImageIndex(0);
       } else {
-        console.error('Failed to fetch product details');
+        console.error("Failed to fetch product details");
         setProduct(null);
-      } 
+      }
     } catch (error) {
-      console.error('Error fetching product:', error);
+      console.error("Error fetching product:", error);
     } finally {
       setLoading(false);
     }
@@ -60,9 +62,9 @@ const ProductDetails = () => {
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
+
+    if (diffDays === 1) return "Today";
+    if (diffDays === 2) return "Yesterday";
     if (diffDays <= 7) return `${diffDays} days ago`;
     return date.toLocaleDateString();
   };
@@ -72,26 +74,30 @@ const ProductDetails = () => {
       removeFromFavorites(product._id);
     } else {
       addToFavorites(product);
-      addPoints(10, 'Added to favorites');
+      addPoints(10, "Added to favorites");
     }
   };
 
   const handleChatClick = () => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
-    navigate(`/chat?productId=${product._id}&sellerId=${product.postedBy}`);
+    navigate(
+      `/chat?productId=${product._id}&sellerId=${
+        product.postedBy._id
+      }&productTitle=${encodeURIComponent(product.title)}`
+    );
   };
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === product.images.length - 1 ? 0 : prev + 1
     );
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => 
+    setCurrentImageIndex((prev) =>
       prev === 0 ? product.images.length - 1 : prev - 1
     );
   };
@@ -111,9 +117,11 @@ const ProductDetails = () => {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Product not found</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Product not found
+          </h2>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg transition-colors"
           >
             Go Home
@@ -159,7 +167,7 @@ const ProductDetails = () => {
                 alt={product.title}
                 className="w-full h-full object-cover"
               />
-              
+
               {product.images.length > 1 && (
                 <>
                   <button
@@ -193,9 +201,9 @@ const ProductDetails = () => {
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === currentImageIndex 
-                        ? 'border-teal-500' 
-                        : 'border-slate-600 hover:border-slate-500'
+                      index === currentImageIndex
+                        ? "border-teal-500"
+                        : "border-slate-600 hover:border-slate-500"
                     }`}
                   >
                     <img
@@ -213,18 +221,16 @@ const ProductDetails = () => {
           <div className="space-y-6">
             {/* Price and Title */}
             <div>
-            
               <h1 className="text-2xl font-semibold text-gray-100 mb-4">
                 {product.title}
               </h1>
-              
+
               {/* Meta Info */}
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <div className="flex items-center space-x-1">
                   <MapPin className="w-4 h-4" />
                   <span>{product.address.street}</span>
                   <span>{product.address.city}</span>
-
                 </div>
                 <div className="flex items-center space-x-1">
                   <Clock className="w-4 h-4" />
@@ -246,17 +252,21 @@ const ProductDetails = () => {
                 onClick={handleFavoriteClick}
                 className={`px-6 py-3 rounded-lg border-2 transition-all flex items-center justify-center ${
                   isFavorite
-                    ? 'border-red-500 bg-red-500 text-white'
-                    : 'border-slate-600 text-gray-300 hover:border-red-500 hover:text-red-500'
+                    ? "border-red-500 bg-red-500 text-white"
+                    : "border-slate-600 text-gray-300 hover:border-red-500 hover:text-red-500"
                 }`}
               >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                <Heart
+                  className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`}
+                />
               </button>
             </div>
 
             {/* Description */}
             <div className="bg-slate-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-3">Description</h3>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                Description
+              </h3>
               <p className="text-gray-300 leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
@@ -264,34 +274,39 @@ const ProductDetails = () => {
 
             {/* Condition */}
             <div className="bg-slate-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-3">Condition</h3>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                Condition
+              </h3>
               <span className="inline-block bg-teal-500 text-white px-3 py-1 rounded-full text-sm">
                 {product.condition}
               </span>
             </div>
 
             {/* whyIamSharing */}
-            { product.whyIamSharing && (
+            {product.whyIamSharing && (
               <div className="bg-slate-800 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-white mb-3">Why I am sharing</h3>
-              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                {product.whyIamSharing}
-              </p>
-            </div>
-
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  Why I am sharing
+                </h3>
+                <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                  {product.whyIamSharing}
+                </p>
+              </div>
             )}
             {/* Seller Info */}
             {seller && (
               <div className="bg-slate-800 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">Seller Information</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Seller Information
+                </h3>
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => navigate(`/profile/${seller._id}`)}
                     className="flex-shrink-0"
                   >
                     <img
-                    src={seller.avatar}
-                    alt={seller.name}
+                      src={seller.avatar}
+                      alt={seller.name}
                       className="w-16 h-16 rounded-full object-cover hover:ring-2 hover:ring-teal-500 transition-all"
                     />
                   </button>
