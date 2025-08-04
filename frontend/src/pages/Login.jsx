@@ -39,7 +39,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = async () => {
-    window.location.href = "http://localhost:3000/api/auth/google";
+    window.location.href = "https://give-for-good.onrender.com/api/auth/google";
   };
 
   return (

@@ -28,7 +28,7 @@ export const GFG_ROUTES ={
 
     GETMYLISTINGS: (id) => `${host}/api/user/profile/mylistings/${id}`,
     DELETEITEM: (id) => `${host}/api/items/deleteItem/${id}`,
-    SOCKET_URL: 'http://localhost:3000',
+    SOCKET_URL: 'https://give-for-good.onrender.com',
     // Add more routes as needed
     GETMESSAGES: (conversationId) => `${host}/api/messages/${conversationId}`,
     GETUSERCONVERSATIONS:(id) => `${host}/api/conversations/get/${id}`,
