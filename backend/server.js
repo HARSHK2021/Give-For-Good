@@ -21,8 +21,11 @@ connectDB();
 const app = express();
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://give-for-good-swart.vercel.app'],
+    origin: [ 'https://give-for-good-swart.vercel.app'],
+
     credentials: true,
+
+
 }));
 app.use(cookieParser());
 app.use(express.json());
@@ -38,7 +41,7 @@ app.use("/api/messages", messageRoutes);
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: "https://give-for-good-swart.vercel.app",
         credentials: true,
     },
 });
