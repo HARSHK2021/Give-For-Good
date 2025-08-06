@@ -158,7 +158,7 @@ const unreadCount = 5;
               className="bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">SELL</span>
+              <span className="hidden sm:inline">Share</span>
             </Link>
           </div>
         </div>

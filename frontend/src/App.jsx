@@ -10,7 +10,7 @@ import Favorites from './pages/Favorites';
 import UserProfile from './pages/UserProfile';
 import SuccessStories from './pages/SuccessStories';
 import Leaderboard from './pages/Leaderboard';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LocationProvider } from './contexts/LocationContext';
 import { FavoritesProvider } from './contexts/FavoritesContext';
 import { UserProfileProvider } from './contexts/UserProfileContext';
@@ -20,54 +20,69 @@ import Chatbot from './components/Chatbot';
 import Signup from './pages/Signup';
 import { ToastContainer } from 'react-toastify';
 import ViewOwnProduct from './pages/ViewOwnProduct';
-import { io } from 'socket.io-client';
 import { SocketProvider } from './contexts/SocketContext';
 import UserProtectedWrapper from './Wrapper/UserProtectedWrapper';
 import Notifications from './pages/Notifications';
 import { NotificationProvider } from './contexts/NotificationContext';
 import CommunityRules from './components/CommunityRules';
 
+// 🌀 Loader Component
+const Loader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white text-2xl">
+    Loading...
+  </div>
+);
+
+function AppContent() {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-slate-900 text-white">
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/chat" element={<UserProtectedWrapper><Chat /></UserProtectedWrapper>} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/add-product" element={<AddProduct />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/profile/:userId/:id" element={<ViewOwnProduct />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/profile/:userId" element={<UserProfile />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/success-stories" element={<SuccessStories />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/community-rules" element={<CommunityRules />} />
+        </Routes>
+        <Chatbot />
+      </div>
+    </Router>
+  );
+}
+
 function App() {
-
-
   return (
     <AuthProvider>
       <LocationProvider>
-            <NotificationProvider>
-        <FavoritesProvider>
-          <UserProfileProvider>
-            <ChatbotProvider>
-              <SuccessStoriesProvider>
-                <SocketProvider>
-                      <ToastContainer />
-                <Router>
-                  <div className="min-h-screen bg-slate-900 text-white">
-                    <Header />
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/chat" element={ <UserProtectedWrapper> <Chat /></UserProtectedWrapper>} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path= "/signup" element={<Signup/>}/>
-                      <Route path="/add-product" element={<AddProduct />} />
-                      <Route path="/product/:id" element={<ProductDetails />} />
-                      <Route path="/profile/:userId/:id" element={<ViewOwnProduct />} />
-                      <Route path="/favorites" element={<Favorites />} />
-                      <Route path="/profile/:userId" element={<UserProfile />} />
-                      <Route path="/profile" element={<UserProfile />} />
-                      <Route path="/success-stories" element={<SuccessStories />} />
-                      <Route path="/leaderboard" element={<Leaderboard />} />
-                      <Route path="/notifications" element={<Notifications />}/>
-                      <Route path="/community-rules" element={<CommunityRules />} />
-
-                    </Routes>
-                    <Chatbot />
-                  </div>
-                </Router>
-                </SocketProvider>
-              </SuccessStoriesProvider>
-            </ChatbotProvider>
-          </UserProfileProvider>
-        </FavoritesProvider>
+        <NotificationProvider>
+          <FavoritesProvider>
+            <UserProfileProvider>
+              <ChatbotProvider>
+                <SuccessStoriesProvider>
+                  <SocketProvider>
+                    <ToastContainer />
+                    <AppContent />
+                  </SocketProvider>
+                </SuccessStoriesProvider>
+              </ChatbotProvider>
+            </UserProfileProvider>
+          </FavoritesProvider>
         </NotificationProvider>
       </LocationProvider>
     </AuthProvider>
