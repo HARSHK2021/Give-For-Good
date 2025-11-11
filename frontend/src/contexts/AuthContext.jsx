@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { GFG_ROUTES } from "../gfgRoutes/gfgRoutes";
 import axios from "axios";
+import { ChevronsRightLeft } from "lucide-react";
 
 
 const AuthContext = createContext();
@@ -55,8 +56,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (userData) => {
+    console.log(userData);
     try {
       const response = await axios.post(GFG_ROUTES.LOGIN, userData);
+      console.log(response)
       const { user, token } = response.data;
 
       setUser(user);

@@ -78,11 +78,6 @@ const Home = () => {
 
   return (
     <>
-      {loading && (
-        <div className="flex items-center justify-center min-h-screen bg-[#0f172a]">
-          <Loader2 className="w-8 h-8 animate-spin text-[#14b8a6]" />
-        </div>
-      )}
     <div className="min-h-screen bg-[#0f172a]">
       <CategoryFilter 
         selectedCategory={selectedCategory}
